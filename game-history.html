@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz — Game History</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; }
+        /* ── NAVBAR ── */
+        #main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .nav-logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        .nav-logo span { color: white; }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: white; background-color: #1e1e3a; }
+        .nav-links a.nav-active { color: white; background-color: #1e1e3a; }
+
+        .nav-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .nav-play-btn {
+            padding: 8px 22px;
+            background-color: #a78bfa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-play-btn:hover { background-color: #7c3aed; }
+
+        .nav-logout-btn {
+            padding: 8px 16px;
+            background: transparent;
+            color: #666;
+            border: 1px solid #1e1e3a;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-logout-btn:hover { border-color: #f87171; color: #f87171; }
+
+        /* Push content below fixed navbar */
+        body > .page-content > .main,
+        .main {
+            padding-top: 88px;
+        }
+
+        /* Push content below fixed nav */
+        .main { padding-top: 80px !important; }
+        body { background-color:#0a0a14; color:white; min-height:100vh; }
+
+        nav {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:18px 48px; background-color:#0d0d1f; border-bottom:1px solid #1e1e3a;
+        }
+        .logo { font-size:22px; font-weight:700; color:#a78bfa; }
+        .logo span { color:white; }
+        .nav-links { display:flex; gap:8px; align-items:center; }
+        .nav-links a {
+            color:#aaa; text-decoration:none; font-size:14px;
+            padding:8px 16px; border-radius:8px; transition:all 0.2s;
+        }
+        .nav-links a:hover { color:white; background-color:#1e1e3a; }
+        .nav-play { background-color:#a78bfa; color:white !important; font-weight:600; }
+        .nav-play:hover { background-color:#7c3aed !important; }
+
+        .auth-loading {
+            position:fixed; inset:0; background-color:#0a0a14;
+            display:flex; flex-direction:column; align-items:center;
+            justify-content:center; z-index:9999;
+        }
+        .spinner {
+            width:48px; height:48px; border:4px solid #1e1e3a;
+            border-top-color:#a78bfa; border-radius:50%;
+            animation:spin 0.8s linear infinite; margin-bottom:16px;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .auth-loading p { font-size:14px; color:#555; }
+        .page-content { display:none; }
+
+        .main { max-width:800px; margin:0 auto; padding:48px 24px; }
+
+        .page-header {
+            display:flex; justify-content:space-between;
+            align-items:center; margin-bottom:32px;
+        }
+
+        .page-header h1 { font-size:28px; font-weight:800; }
+        .page-header p { font-size:14px; color:#555; margin-top:4px; }
+
+        .back-btn {
+            padding:10px 20px; background:transparent; color:#aaa;
+            border:1px solid #1e1e3a; border-radius:8px; cursor:pointer;
+            font-size:14px; transition:all 0.2s; text-decoration:none;
+            display:inline-block;
+        }
+        .back-btn:hover { border-color:#a78bfa; color:white; }
+
+        /* FILTER TABS */
+        .filter-bar {
+            display:flex; gap:8px; margin-bottom:24px; align-items:center; flex-wrap:wrap;
+        }
+
+        .filter-btn {
+            padding:8px 20px; border-radius:20px; border:1px solid #1e1e3a;
+            background:transparent; color:#666; font-size:13px; cursor:pointer; transition:all 0.2s;
+        }
+
+        .filter-btn.active {
+            background-color:#a78bfa; border-color:#a78bfa; color:white;
+        }
+
+        .cat-filter {
+            padding:8px 16px; background-color:#0d0d1f; border:1px solid #1e1e3a;
+            border-radius:8px; color:white; font-size:13px; cursor:pointer; outline:none;
+            margin-left:auto;
+        }
+
+        .cat-filter:focus { border-color:#a78bfa; }
+
+        /* STATS ROW */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(4,1fr);
+            gap:12px; margin-bottom:24px;
+        }
+
+        .mini-stat {
+            background-color:#0d0d1f; border:1px solid #1e1e3a;
+            border-radius:12px; padding:16px; text-align:center;
+        }
+
+        .mini-stat-val { font-size:22px; font-weight:800; color:#a78bfa; margin-bottom:4px; }
+        .mini-stat-lbl { font-size:11px; color:#555; }
+
+        /* HISTORY TABLE */
+        .history-table {
+            background-color:#0d0d1f; border:1px solid #1e1e3a;
+            border-radius:20px; overflow:hidden;
+        }
+
+        .history-table-header {
+            display:grid; grid-template-columns:1fr 100px 80px 100px;
+            padding:12px 24px; font-size:11px; font-weight:700;
+            color:#444; letter-spacing:1px; border-bottom:1px solid #1e1e3a;
+            text-transform:uppercase;
+        }
+
+        .history-row {
+            display:grid; grid-template-columns:1fr 100px 80px 100px;
+            padding:16px 24px; align-items:center;
+            border-bottom:1px solid #1e1e3a; transition:background-color 0.2s;
+        }
+
+        .history-row:last-child { border-bottom:none; }
+        .history-row:hover { background-color:#12122a; }
+
+        .game-cat { font-weight:600; color:#ddd; font-size:14px; }
+        .game-date { font-size:12px; color:#444; margin-top:3px; }
+
+        .score-col { font-size:15px; font-weight:700; color:#a78bfa; }
+        .q-col { font-size:13px; color:#666; }
+
+        .result-win {
+            font-size:12px; font-weight:700; padding:4px 12px;
+            border-radius:20px; background-color:#0d2a1a; color:#4ade80;
+            text-align:center;
+        }
+
+        .result-loss {
+            font-size:12px; font-weight:700; padding:4px 12px;
+            border-radius:20px; background-color:#2a0d0d; color:#f87171;
+            text-align:center;
+        }
+
+        .no-data {
+            text-align:center; color:#444; font-size:14px; padding:48px 24px;
+        }
+
+        .loading {
+            text-align:center; color:#444; font-size:14px; padding:32px;
+        }
+
+        /* PAGINATION */
+        .pagination {
+            display:flex; justify-content:center; gap:8px;
+            margin-top:24px; flex-wrap:wrap;
+        }
+
+        .page-btn {
+            padding:8px 16px; background:transparent; border:1px solid #1e1e3a;
+            color:#666; border-radius:8px; cursor:pointer; font-size:13px; transition:all 0.2s;
+        }
+
+        .page-btn.active { background-color:#a78bfa; border-color:#a78bfa; color:white; }
+        .page-btn:hover:not(.active) { border-color:#a78bfa; color:white; }
+    </style>
+</head>
+<body>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="navbar.js"></script>
+
+    <div class="auth-loading" id="auth-loading">
+        <div class="spinner"></div>
+        <p>Loading history...</p>
+    </div>
+
+    <div class="page-content" id="page-content">
+        <nav>
+            <div class="logo">⚡ Incentive<span>Quiz</span></div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="profile.html">Profile</a>
+                <a href="leaderboard.html">Leaderboard</a>
+                <a href="game.html" class="nav-play">⚡ Play</a>
+            </div>
+        </nav>
+
+        <div class="main">
+            <div class="page-header">
+                <div>
+                    <h1>📋 Game History</h1>
+                    <p id="history-count">Loading your games...</p>
+                </div>
+                <a href="profile.html" class="back-btn">← Back to Profile</a>
+            </div>
+
+            <!-- STATS ROW -->
+            <div class="stats-row">
+                <div class="mini-stat">
+                    <div class="mini-stat-val" id="total-games">0</div>
+                    <div class="mini-stat-lbl">Total Games</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="mini-stat-val" id="total-wins">0</div>
+                    <div class="mini-stat-lbl">Wins</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="mini-stat-val" id="total-losses">0</div>
+                    <div class="mini-stat-lbl">Losses</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="mini-stat-val" id="avg-score">0</div>
+                    <div class="mini-stat-lbl">Avg Score</div>
+                </div>
+            </div>
+
+            <!-- FILTERS -->
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterBy('all', this)">All</button>
+                <button class="filter-btn" onclick="filterBy('win', this)">🏆 Wins</button>
+                <button class="filter-btn" onclick="filterBy('loss', this)">💀 Losses</button>
+                <select class="cat-filter" id="cat-filter" onchange="filterByCat()">
+                    <option value="">All Categories</option>
+                    <option>Indian GK</option>
+                    <option>World GK</option>
+                    <option>Science</option>
+                    <option>Maths</option>
+                    <option>Current Affairs</option>
+                    <option>History</option>
+                    <option>Cricket</option>
+                    <option>Sports</option>
+                    <option>Bollywood</option>
+                    <option>OTT and Web Series</option>
+                </select>
+            </div>
+
+            <!-- TABLE -->
+            <div class="history-table">
+                <div class="history-table-header">
+                    <div>Game</div>
+                    <div>Score</div>
+                    <div>Question</div>
+                    <div>Result</div>
+                </div>
+                <div id="history-body">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- PAGINATION -->
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+    <script>
+        let allHistory = [];
+        let filteredHistory = [];
+        let currentFilter = 'all';
+        let currentCat = '';
+        let currentPage = 1;
+        const perPage = 15;
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            localStorage.setItem('iqUID', user.uid);
+
+            const loader = document.getElementById('auth-loading');
+            const content = document.getElementById('page-content');
+            if (loader) loader.style.display = 'none';
+            if (content) content.style.display = 'block';
+            renderNavbar('game-history');
+
+            await loadHistory(user.uid);
+        });
+
+        async function loadHistory(uid) {
+            try {
+                const snap = await db.collection('users').doc(uid)
+                    .collection('history')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+
+                allHistory = snap.docs.map(d => d.data());
+
+            } catch(e) {
+                // Fallback without orderBy
+                try {
+                    const snap2 = await db.collection('users').doc(uid)
+                        .collection('history').get();
+                    allHistory = snap2.docs.map(d => d.data())
+                        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                } catch(e2) {
+                    allHistory = [];
+                }
+            }
+
+            // Update stats
+            const wins   = allHistory.filter(g => g.won).length;
+            const losses = allHistory.length - wins;
+            const avgScore = allHistory.length > 0
+                ? Math.round(allHistory.reduce((s, g) => s + (g.score || 0), 0) / allHistory.length)
+                : 0;
+
+            document.getElementById('total-games').textContent  = allHistory.length;
+            document.getElementById('total-wins').textContent   = wins;
+            document.getElementById('total-losses').textContent = losses;
+            document.getElementById('avg-score').textContent    = avgScore;
+            document.getElementById('history-count').textContent =
+                allHistory.length + ' games played in total';
+
+            applyFilters();
+        }
+
+        function filterBy(filter, btn) {
+            currentFilter = filter;
+            currentPage = 1;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilters();
+        }
+
+        function filterByCat() {
+            currentCat = document.getElementById('cat-filter').value;
+            currentPage = 1;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            filteredHistory = allHistory.filter(g => {
+                const matchResult = currentFilter === 'all'
+                    || (currentFilter === 'win' && g.won)
+                    || (currentFilter === 'loss' && !g.won);
+                const matchCat = !currentCat || g.category === currentCat;
+                return matchResult && matchCat;
+            });
+            renderPage();
+            renderPagination();
+        }
+
+        function renderPage() {
+            const el = document.getElementById('history-body');
+
+            if (filteredHistory.length === 0) {
+                el.innerHTML = '<div class="no-data">No games found.</div>';
+                return;
+            }
+
+            const start = (currentPage - 1) * perPage;
+            const end   = start + perPage;
+            const page  = filteredHistory.slice(start, end);
+
+            el.innerHTML = page.map(g => `
+                <div class="history-row">
+                    <div>
+                        <div class="game-cat">${g.category || 'General'}</div>
+                        <div class="game-date">${g.date || ''}</div>
+                    </div>
+                    <div class="score-col">${g.score || 0} correct</div>
+                    <div class="q-col">Q${g.eliminatedAt || 0}</div>
+                    <div>
+                        <span class="${g.won ? 'result-win' : 'result-loss'}">
+                            ${g.won ? '🏆 Win' : '💀 Loss'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredHistory.length / perPage);
+            const el = document.getElementById('pagination');
+
+            if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+            let html = '';
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Prev</button>`;
+            }
+
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
+            }
+
+            el.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderPage();
+            renderPagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

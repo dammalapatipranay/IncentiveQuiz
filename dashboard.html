@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz — Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        /* ── NAVBAR ── */
+        #main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .nav-logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        .nav-logo span { color: white; }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: white; background-color: #1e1e3a; }
+        .nav-links a.nav-active { color: white; background-color: #1e1e3a; }
+
+        .nav-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .nav-play-btn {
+            padding: 8px 22px;
+            background-color: #a78bfa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-play-btn:hover { background-color: #7c3aed; }
+
+        .nav-logout-btn {
+            padding: 8px 16px;
+            background: transparent;
+            color: #666;
+            border: 1px solid #1e1e3a;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-logout-btn:hover { border-color: #f87171; color: #f87171; }
+
+        /* Push content below fixed navbar */
+        body > .page-content > .main,
+        .main {
+            padding-top: 88px;
+        }
+
+        /* Push content below fixed nav */
+        .main { padding-top: 80px !important; }
+
+        body {
+            background-color: #0a0a14;
+            color: white;
+            min-height: 100vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+        }
+
+        .logo span { color: white; }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-right a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-right a:hover {
+            color: white;
+            background-color: #1e1e3a;
+        }
+
+        .nav-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            font-size: 13px;
+            color: #666;
+            background: none;
+            border: 1px solid #1e1e3a;
+            padding: 7px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            border-color: #f87171;
+            color: #f87171;
+        }
+
+        .main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        /* WELCOME */
+        .welcome-banner {
+            background: linear-gradient(135deg, #1a1a3a 0%, #0d0d1f 100%);
+            border: 1px solid #2a2a4a;
+            border-radius: 24px;
+            padding: 40px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .welcome-left h1 {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .welcome-left h1 span { color: #a78bfa; }
+
+        .welcome-left p { color: #555; font-size: 15px; }
+
+        .play-now-btn {
+            padding: 16px 48px;
+            font-size: 17px;
+            font-weight: 700;
+            background-color: #a78bfa;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .play-now-btn:hover {
+            background-color: #7c3aed;
+            transform: translateY(-2px);
+        }
+
+        /* STATS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            padding: 24px 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: #a78bfa;
+            transform: translateY(-2px);
+        }
+
+        .stat-icon { font-size: 26px; margin-bottom: 10px; }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #a78bfa;
+            margin-bottom: 4px;
+        }
+        .stat-label { font-size: 12px; color: #555; }
+
+        /* ACTIONS */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .action-card {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-card:hover {
+            border-color: #a78bfa;
+            background-color: #12122a;
+            transform: translateY(-2px);
+        }
+
+        .action-icon { font-size: 32px; margin-bottom: 10px; }
+        .action-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .action-desc { font-size: 12px; color: #555; }
+
+        /* TWO COL */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 20px;
+            padding: 28px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        /* HISTORY ROWS */
+        .game-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1e1e3a;
+            font-size: 14px;
+        }
+
+        .game-row:last-child { border-bottom: none; }
+
+        .game-info { display: flex; flex-direction: column; gap: 3px; }
+        .game-name { font-weight: 600; color: #ddd; }
+        .game-time { font-size: 12px; color: #444; }
+
+        .result-win {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background-color: #0d2a1a;
+            color: #4ade80;
+        }
+
+        .result-loss {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background-color: #2a0d0d;
+            color: #f87171;
+        }
+
+        .no-data {
+            color: #444;
+            font-size: 14px;
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        /* LEADERBOARD */
+        .lb-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 0;
+            border-bottom: 1px solid #1e1e3a;
+            font-size: 14px;
+        }
+
+        .lb-row:last-child { border-bottom: none; }
+
+        .lb-rank {
+            width: 28px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .lb-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .lb-name { flex: 1; font-weight: 500; color: #ddd; }
+        .lb-you { color: #a78bfa; font-weight: 700; }
+        .lb-score { color: #a78bfa; font-weight: 700; }
+
+        /* LOADING */
+        .loading {
+            text-align: center;
+            color: #444;
+            font-size: 14px;
+            padding: 24px 0;
+        }
+        /* LOADING OVERLAY */
+        .auth-loading {
+            position: fixed;
+            inset: 0;
+            background-color: #0a0a14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .auth-loading .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #1e1e3a;
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .auth-loading p {
+            font-size: 14px;
+            color: #555;
+        }
+        .lb-tab {
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1px solid #1e1e3a;
+            background: transparent;
+            color: #666;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lb-tab.active {
+            background-color: #a78bfa;
+            border-color: #a78bfa;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- AUTH LOADING OVERLAY -->
+    <div class="auth-loading" id="auth-loading">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="navbar.js"></script>
+
+    <nav>
+        <div class="logo">⚡ Incentive<span>Quiz</span></div>
+        <div class="nav-right">
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="profile.html">Profile</a>
+            <div class="nav-avatar" id="nav-avatar">P</div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="main">
+
+        <div class="welcome-banner">
+            <div class="welcome-left">
+                <h1>Welcome back, <span id="welcome-name">...</span> 👋</h1>
+                <p id="welcome-sub">Loading your profile...</p>
+            </div>
+            <button class="play-now-btn" onclick="window.location.href='game.html'">⚡ Play Now</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎮</div>
+                <div class="stat-value" id="s-games">—</div>
+                <div class="stat-label">Games Played</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="s-wins">—</div>
+                <div class="stat-label">Wins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value" id="s-best">—</div>
+                <div class="stat-label">Best Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="s-streak">—</div>
+                <div class="stat-label">Win Streak</div>
+            </div>
+        </div>
+
+        <div class="actions-grid">
+            <div class="action-card" onclick="window.location.href='game.html'">
+                <div class="action-icon">⚡</div>
+                <div class="action-title">Quick Match</div>
+                <div class="action-desc">Jump into a game now</div>
+            </div>
+            <div class="action-card" onclick="window.location.href='leaderboard.html'">
+                <div class="action-icon">🏅</div>
+                <div class="action-title">Leaderboard</div>
+                <div class="action-desc">See the top players</div>
+            </div>
+            <div class="action-card" onclick="window.location.href='profile.html'">
+                <div class="action-icon">👤</div>
+                <div class="action-title">My Profile</div>
+                <div class="action-desc">Stats and achievements</div>
+            </div>
+        </div>
+
+        <div class="two-col">
+
+            <div class="panel">
+                <div class="panel-title">🕹️ Recent Games</div>
+                <div id="recent-list"><div class="loading">Loading...</div></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+                    <span>🏆 Leaderboard</span>
+                    <div style="display:flex;gap:6px">
+                        <button class="lb-tab active" id="lb-tab-all" onclick="switchLbTab('all')">All</button>
+                        <button class="lb-tab" id="lb-tab-friends" onclick="switchLbTab('friends')">👥 Friends</button>
+                    </div>
+                </div>
+                <div id="lb-list"><div class="loading">Loading...</div></div>
+                <a href="leaderboard.html" style="display:block;text-align:center;margin-top:16px;font-size:13px;color:#a78bfa;text-decoration:none">
+                    View full leaderboard →
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        let currentUID = null;
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            // Force fresh read — disable cache
+            db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
+            currentUID = user.uid;
+            localStorage.setItem('iqUID', user.uid);
+
+            // Hide loader show content
+            const loader = document.getElementById('auth-loading');
+            const content = document.getElementById('page-content');
+            if (loader) loader.style.display = 'none';
+            if (content) content.style.display = 'block';
+            renderNavbar('dashboard');
+
+            try {
+                // Load user data from Firestore
+                const doc = await db.collection('users').doc(user.uid).get();
+
+                if (!doc.exists) {
+                    // Auto create document if missing
+                    await db.collection('users').doc(user.uid).set({
+                        username: user.email.split('@')[0],
+                        email: user.email,
+                        games: 0,
+                        wins: 0,
+                        best: 0,
+                        streak: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    window.location.reload();
+                    return;
+                }
+
+                const data = doc.data();
+                const username = data.username || 'Player';
+                localStorage.setItem('iqUsername', username);
+
+                // Update UI
+                document.getElementById('nav-avatar').textContent = username[0].toUpperCase();
+                document.getElementById('welcome-name').textContent = username;
+
+                // Greeting
+                const hour = new Date().getHours();
+                let greeting = 'Ready to climb the leaderboard?';
+                if (hour < 12) greeting = 'Good morning! Start your day with a win.';
+                else if (hour < 17) greeting = 'Good afternoon! Ready to dominate?';
+                else greeting = 'Good evening! One more game before bed?';
+                document.getElementById('welcome-sub').textContent = greeting;
+
+                // Stats
+                document.getElementById('s-games').textContent = data.games || 0;
+                document.getElementById('s-wins').textContent = data.wins || 0;
+                document.getElementById('s-best').textContent = data.best || 0;
+                document.getElementById('s-streak').textContent = data.streak || 0;
+
+            } catch(e) {
+                console.log('Error loading user data:', e);
+                document.getElementById('welcome-name').textContent = 'Player';
+                document.getElementById('welcome-sub').textContent = 'Ready to play?';
+                document.getElementById('s-games').textContent = 0;
+                document.getElementById('s-wins').textContent = 0;
+                document.getElementById('s-best').textContent = 0;
+                document.getElementById('s-streak').textContent = 0;
+            }
+
+            // Load history and leaderboard separately so one failing does not block the other
+            loadHistory(user.uid);
+            loadLeaderboard();
+        });
+
+        let currentLbTab = 'all';
+
+        function switchLbTab(tab) {
+            currentLbTab = tab;
+            document.getElementById('lb-tab-all').classList.toggle('active', tab === 'all');
+            document.getElementById('lb-tab-friends').classList.toggle('active', tab === 'friends');
+            if (tab === 'all') {
+                loadLeaderboard();
+            } else {
+                loadFriendsLeaderboard();
+            }
+        }
+
+        async function loadLeaderboard() {
+            const el = document.getElementById('lb-list');
+            const username = localStorage.getItem('iqUsername');
+            try {
+                const snap = await db.collection('users')
+                    .orderBy('best', 'desc')
+                    .limit(5)
+                    .get();
+
+                if (snap.empty) {
+                    el.innerHTML = '<div class="no-data">No players yet.</div>';
+                    return;
+                }
+
+                const medals = ['🥇', '🥈', '🥉'];
+                el.innerHTML = snap.docs.map((d, i) => {
+                    const u = d.data();
+                    const isYou = u.username === username;
+                    return `
+                        <div class="lb-row">
+                            <div class="lb-rank">${medals[i] || '#' + (i + 1)}</div>
+                            <div class="lb-avatar">${(u.username || 'P')[0].toUpperCase()}</div>
+                            <div class="lb-name ${isYou ? 'lb-you' : ''}">
+                                ${u.username || 'Player'} ${isYou ? '(You)' : ''}
+                            </div>
+                            <div class="lb-score">${u.best || 0}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                el.innerHTML = '<div class="no-data">Could not load.</div>';
+            }
+        }
+
+        async function loadFriendsLeaderboard() {
+            const el = document.getElementById('lb-list');
+            const uid = localStorage.getItem('iqUID');
+            const username = localStorage.getItem('iqUsername');
+
+            try {
+                el.innerHTML = '<div class="loading">Loading friends...</div>';
+
+                const friendsSnap = await db.collection('users').doc(uid)
+                    .collection('friends').get();
+
+                if (friendsSnap.empty) {
+                    el.innerHTML = '<div class="no-data">No friends yet. Add friends from the leaderboard!</div>';
+                    return;
+                }
+
+                const friendUIDs = friendsSnap.docs.map(d => d.id);
+                friendUIDs.push(uid);
+
+                const friendData = [];
+                for (const fUID of friendUIDs) {
+                    const doc = await db.collection('users').doc(fUID).get();
+                    if (doc.exists) friendData.push({ uid: doc.id, ...doc.data() });
+                }
+
+                friendData.sort((a, b) => (b.best || 0) - (a.best || 0));
+
+                const medals = ['🥇', '🥈', '🥉'];
+                el.innerHTML = friendData.slice(0, 5).map((u, i) => {
+                    const isYou = u.username === username;
+                    return `
+                        <div class="lb-row">
+                            <div class="lb-rank">${medals[i] || '#' + (i + 1)}</div>
+                            <div class="lb-avatar">${(u.username || 'P')[0].toUpperCase()}</div>
+                            <div class="lb-name ${isYou ? 'lb-you' : ''}">
+                                ${u.username || 'Player'} ${isYou ? '(You)' : ''}
+                            </div>
+                            <div class="lb-score">${u.best || 0}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                el.innerHTML = '<div class="no-data">Could not load friends.</div>';
+            }
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            });
+        }
+
+    </script>
+</body>
+</html>

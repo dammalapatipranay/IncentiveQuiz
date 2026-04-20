@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz — Player Profile</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; }
+        /* ── NAVBAR ── */
+        #main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .nav-logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        .nav-logo span { color: white; }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: white; background-color: #1e1e3a; }
+        .nav-links a.nav-active { color: white; background-color: #1e1e3a; }
+
+        .nav-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .nav-play-btn {
+            padding: 8px 22px;
+            background-color: #a78bfa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-play-btn:hover { background-color: #7c3aed; }
+
+        .nav-logout-btn {
+            padding: 8px 16px;
+            background: transparent;
+            color: #666;
+            border: 1px solid #1e1e3a;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-logout-btn:hover { border-color: #f87171; color: #f87171; }
+
+        /* Push content below fixed navbar */
+        body > .page-content > .main,
+        .main {
+            padding-top: 88px;
+        }
+
+        /* Push content below fixed nav */
+        .main { padding-top: 80px !important; }
+
+        body { background-color:#0a0a14; color:white; min-height:100vh; }
+
+        nav {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:18px 48px; background-color:#0d0d1f; border-bottom:1px solid #1e1e3a;
+        }
+
+        .logo { font-size:22px; font-weight:700; color:#a78bfa; }
+        .logo span { color:white; }
+
+        .nav-links { display:flex; gap:8px; align-items:center; }
+        .nav-links a {
+            color:#aaa; text-decoration:none; font-size:14px;
+            padding:8px 16px; border-radius:8px; transition:all 0.2s;
+        }
+        .nav-links a:hover { color:white; background-color:#1e1e3a; }
+        .nav-play { background-color:#a78bfa; color:white !important; font-weight:600; }
+        .nav-play:hover { background-color:#7c3aed !important; }
+
+        .auth-loading {
+            position:fixed; inset:0; background-color:#0a0a14;
+            display:flex; flex-direction:column; align-items:center;
+            justify-content:center; z-index:9999;
+        }
+        .spinner {
+            width:48px; height:48px; border:4px solid #1e1e3a;
+            border-top-color:#a78bfa; border-radius:50%;
+            animation:spin 0.8s linear infinite; margin-bottom:16px;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .auth-loading p { font-size:14px; color:#555; }
+        .page-content { display:none; }
+
+        .main { max-width:900px; margin:0 auto; padding:48px 24px; }
+
+        /* PROFILE HEADER */
+        .profile-header {
+            background-color:#0d0d1f; border:1px solid #1e1e3a;
+            border-radius:24px; padding:40px 48px;
+            display:flex; align-items:center; gap:32px; margin-bottom:28px;
+        }
+
+        .big-avatar {
+            width:90px; height:90px;
+            background:linear-gradient(135deg,#a78bfa,#7c3aed);
+            border-radius:50%; display:flex; align-items:center;
+            justify-content:center; font-size:36px; font-weight:900; flex-shrink:0;
+        }
+
+        .profile-info h1 { font-size:28px; font-weight:800; margin-bottom:6px; }
+        .profile-info p { font-size:14px; color:#555; margin-bottom:16px; }
+
+        .profile-badges { display:flex; gap:8px; flex-wrap:wrap; }
+        .badge-pill {
+            font-size:12px; padding:4px 12px; border-radius:20px;
+            font-weight:600; background-color:#1e1e3a; color:#a78bfa; border:1px solid #2a2a4a;
+        }
+
+        .profile-actions { margin-left:auto; display:flex; flex-direction:column; gap:10px; }
+
+        .btn-primary {
+            padding:12px 32px; background-color:#a78bfa; color:white;
+            font-size:15px; font-weight:700; border:none; border-radius:10px;
+            cursor:pointer; transition:all 0.2s; white-space:nowrap;
+        }
+        .btn-primary:hover { background-color:#7c3aed; }
+
+        .btn-secondary {
+            padding:12px 32px; background-color:transparent; color:#aaa;
+            font-size:14px; font-weight:600; border:1px solid #1e1e3a;
+            border-radius:10px; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+        }
+        .btn-secondary:hover { border-color:#a78bfa; color:white; }
+
+        .btn-danger {
+            padding:12px 32px; background-color:transparent; color:#f87171;
+            font-size:14px; font-weight:600; border:1px solid #f87171;
+            border-radius:10px; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+        }
+        .btn-danger:hover { background-color:#2a0d0d; }
+
+        .btn-pending {
+            padding:12px 32px; background-color:#1e1e3a; color:#888;
+            font-size:14px; font-weight:600; border:1px solid #2a2a4a;
+            border-radius:10px; cursor:default; white-space:nowrap;
+        }
+
+        /* STATS */
+        .stats-grid {
+            display:grid; grid-template-columns:repeat(4,1fr);
+            gap:16px; margin-bottom:28px;
+        }
+        .stat-card {
+            background-color:#0d0d1f; border:1px solid #1e1e3a;
+            border-radius:16px; padding:24px 16px; text-align:center;
+        }
+        .stat-icon { font-size:26px; margin-bottom:10px; }
+        .stat-value { font-size:28px; font-weight:800; color:#a78bfa; margin-bottom:4px; }
+        .stat-label { font-size:12px; color:#555; }
+
+        /* ACHIEVEMENTS */
+        .panel {
+            background-color:#0d0d1f; border:1px solid #1e1e3a;
+            border-radius:20px; padding:28px; margin-bottom:24px;
+        }
+        .panel-title { font-size:16px; font-weight:700; margin-bottom:20px; }
+
+        .achievements-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+        .achievement {
+            background-color:#0a0a14; border:1px solid #1e1e3a;
+            border-radius:16px; padding:20px 16px; text-align:center;
+            position:relative; transition:all 0.2s;
+        }
+        .achievement.unlocked { border-color:#a78bfa; background-color:#12122a; }
+        .achievement.locked { opacity:0.4; filter:grayscale(1); }
+        .ach-icon { font-size:32px; margin-bottom:10px; }
+        .ach-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+        .ach-desc { font-size:11px; color:#555; line-height:1.4; }
+        .ach-unlocked-tag {
+            position:absolute; top:-8px; right:10px;
+            background-color:#a78bfa; color:white;
+            font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+        }
+
+        /* NOT FOUND */
+        .not-found {
+            text-align:center; padding:80px 20px;
+        }
+        .not-found div { font-size:64px; margin-bottom:20px; }
+        .not-found h2 { font-size:28px; color:#f87171; margin-bottom:12px; }
+        .not-found p { color:#555; font-size:15px; margin-bottom:32px; }
+    </style>
+</head>
+<body>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="navbar.js"></script>
+
+    <div class="auth-loading" id="auth-loading">
+        <div class="spinner"></div>
+        <p>Loading profile...</p>
+    </div>
+
+    <div class="page-content" id="page-content">
+        <nav>
+            <div class="logo">⚡ Incentive<span>Quiz</span></div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="leaderboard.html">Leaderboard</a>
+                <a href="profile.html">My Profile</a>
+                <a href="game.html" class="nav-play">⚡ Play</a>
+            </div>
+        </nav>
+
+        <div class="main">
+            <div id="not-found" style="display:none" class="not-found">
+                <div>👤</div>
+                <h2>Player Not Found</h2>
+                <p>This player does not exist or their profile is unavailable.</p>
+                <button class="btn-primary" onclick="window.location.href='leaderboard.html'">
+                    View Leaderboard
+                </button>
+            </div>
+
+            <div id="profile-content">
+                <div class="profile-header">
+                    <div class="big-avatar" id="big-avatar">P</div>
+                    <div class="profile-info">
+                        <h1 id="profile-name">Loading...</h1>
+                        <p id="profile-joined">—</p>
+                        <div class="profile-badges" id="profile-badges"></div>
+                    </div>
+                    <div class="profile-actions" id="profile-actions"></div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎮</div>
+                        <div class="stat-value" id="s-games">—</div>
+                        <div class="stat-label">Games Played</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="s-wins">—</div>
+                        <div class="stat-label">Total Wins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value" id="s-best">—</div>
+                        <div class="stat-label">Best Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-value" id="s-streak">—</div>
+                        <div class="stat-label">Win Streak</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">🎖️ Achievements</div>
+                    <div class="achievements-grid" id="ach-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get the UID from URL — ?uid=xxxxx
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUID = urlParams.get('uid');
+
+        let currentUserUID = null;
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUserUID = user.uid;
+            localStorage.setItem('iqUID', user.uid);
+
+            const loader = document.getElementById('auth-loading');
+            const content = document.getElementById('page-content');
+            if (loader) loader.style.display = 'none';
+            if (content) content.style.display = 'block';
+            renderNavbar('user-profile');
+
+            if (!targetUID) {
+                showNotFound();
+                return;
+            }
+
+            // If viewing own profile redirect to profile.html
+            if (targetUID === user.uid) {
+                window.location.href = 'profile.html';
+                return;
+            }
+
+            await loadTargetProfile(targetUID, user.uid);
+        });
+
+        async function loadTargetProfile(targetUID, viewerUID) {
+            try {
+                const doc = await db.collection('users').doc(targetUID).get();
+                if (!doc.exists) { showNotFound(); return; }
+
+                const data = doc.data();
+                const username = data.username || 'Player';
+
+                // Profile header
+                document.getElementById('big-avatar').textContent = username[0].toUpperCase();
+                document.getElementById('profile-name').textContent = username;
+
+                const joined = data.createdAt
+                    ? data.createdAt.toDate().toLocaleDateString('en-IN', { month:'long', year:'numeric' })
+                    : 'Recently';
+                document.getElementById('profile-joined').textContent = 'Playing since ' + joined;
+
+                // Stats
+                const games  = data.games  || 0;
+                const wins   = data.wins   || 0;
+                const best   = data.best   || 0;
+                const streak = data.streak || 0;
+
+                document.getElementById('s-games').textContent  = games;
+                document.getElementById('s-wins').textContent   = wins;
+                document.getElementById('s-best').textContent   = best;
+                document.getElementById('s-streak').textContent = streak;
+
+                // Achievements
+                renderAchievements(games, wins, best, streak);
+
+                // Badges
+                renderBadges(games, wins, best, streak);
+
+                // Friend button
+                await renderFriendButton(targetUID, viewerUID);
+
+            } catch(e) {
+                console.log('Error:', e);
+                showNotFound();
+            }
+        }
+
+        async function renderFriendButton(targetUID, viewerUID) {
+            const actionsEl = document.getElementById('profile-actions');
+
+            // Check if already friends
+            const friendDoc = await db.collection('users').doc(viewerUID)
+                .collection('friends').doc(targetUID).get();
+
+            if (friendDoc.exists) {
+                // Already friends
+                actionsEl.innerHTML = `
+                    <button class="btn-primary" disabled style="background:#0d2a1a;border:1px solid #4ade80;color:#4ade80;cursor:default">
+                        ✅ Friends
+                    </button>
+                    <button class="btn-danger" onclick="removeFriend('${targetUID}')">
+                        Remove Friend
+                    </button>
+                `;
+                return;
+            }
+
+            // Check if request already sent
+            const sentReq = await db.collection('friendRequests')
+                .where('from', '==', viewerUID)
+                .where('to', '==', targetUID)
+                .where('status', '==', 'pending')
+                .get();
+
+            if (!sentReq.empty) {
+                actionsEl.innerHTML = `
+                    <button class="btn-pending">⏳ Request Sent</button>
+                    <button class="btn-danger" onclick="cancelRequest('${sentReq.docs[0].id}')">
+                        Cancel Request
+                    </button>
+                `;
+                return;
+            }
+
+            // Check if they sent us a request
+            const receivedReq = await db.collection('friendRequests')
+                .where('from', '==', targetUID)
+                .where('to', '==', viewerUID)
+                .where('status', '==', 'pending')
+                .get();
+
+            if (!receivedReq.empty) {
+                const reqId = receivedReq.docs[0].id;
+                actionsEl.innerHTML = `
+                    <button class="btn-primary" onclick="acceptRequest('${reqId}', '${targetUID}')">
+                        ✅ Accept Request
+                    </button>
+                    <button class="btn-danger" onclick="rejectRequest('${reqId}')">
+                        ❌ Reject
+                    </button>
+                `;
+                return;
+            }
+
+            // Not friends — show add button
+            actionsEl.innerHTML = `
+                <button class="btn-primary" onclick="sendFriendRequest('${targetUID}')">
+                    👥 Add Friend
+                </button>
+            `;
+        }
+
+        async function sendFriendRequest(targetUID) {
+            const viewerName = localStorage.getItem('iqUsername') || 'Player';
+            try {
+                await db.collection('friendRequests').add({
+                    from: currentUserUID,
+                    to: targetUID,
+                    fromName: viewerName,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await renderFriendButton(targetUID, currentUserUID);
+                alert('Friend request sent!');
+            } catch(e) {
+                alert('Could not send request: ' + e.message);
+            }
+        }
+
+        async function cancelRequest(reqId) {
+            try {
+                await db.collection('friendRequests').doc(reqId).delete();
+                await renderFriendButton(targetUID, currentUserUID);
+            } catch(e) {
+                alert('Could not cancel: ' + e.message);
+            }
+        }
+
+        async function acceptRequest(reqId, fromUID) {
+            try {
+                const myName = localStorage.getItem('iqUsername') || 'Player';
+
+                // Get the other user's name
+                const otherDoc = await db.collection('users').doc(fromUID).get();
+                const otherName = otherDoc.data().username || 'Player';
+
+                // Add to both users' friends subcollection
+                await db.collection('users').doc(currentUserUID)
+                    .collection('friends').doc(fromUID).set({
+                        uid: fromUID,
+                        username: otherName,
+                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                await db.collection('users').doc(fromUID)
+                    .collection('friends').doc(currentUserUID).set({
+                        uid: currentUserUID,
+                        username: myName,
+                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                // Update request status
+                await db.collection('friendRequests').doc(reqId)
+                    .update({ status: 'accepted' });
+
+                await renderFriendButton(fromUID, currentUserUID);
+                alert('You are now friends with ' + otherName + '!');
+            } catch(e) {
+                alert('Could not accept: ' + e.message);
+            }
+        }
+
+        async function rejectRequest(reqId) {
+            try {
+                await db.collection('friendRequests').doc(reqId)
+                    .update({ status: 'rejected' });
+                await renderFriendButton(targetUID, currentUserUID);
+            } catch(e) {
+                alert('Could not reject: ' + e.message);
+            }
+        }
+
+        async function removeFriend(friendUID) {
+            if (!confirm('Remove this friend?')) return;
+            try {
+                await db.collection('users').doc(currentUserUID)
+                    .collection('friends').doc(friendUID).delete();
+                await db.collection('users').doc(friendUID)
+                    .collection('friends').doc(currentUserUID).delete();
+                await renderFriendButton(friendUID, currentUserUID);
+                alert('Friend removed.');
+            } catch(e) {
+                alert('Could not remove: ' + e.message);
+            }
+        }
+
+        function renderBadges(games, wins, best, streak) {
+            const achievements = getAchievements(games, wins, best, streak);
+            const earned = achievements.filter(a => a.unlocked);
+            document.getElementById('profile-badges').innerHTML = earned.length > 0
+                ? earned.map(a => `<span class="badge-pill">${a.icon} ${a.name}</span>`).join('')
+                : '<span style="color:#444;font-size:13px">No achievements yet.</span>';
+        }
+
+        function getAchievements(games, wins, best, streak) {
+            return [
+                { icon:'🎮', name:'First Game',     unlocked: games >= 1  },
+                { icon:'🏆', name:'First Win',      unlocked: wins >= 1   },
+                { icon:'🔥', name:'On Fire',        unlocked: streak >= 3 },
+                { icon:'🎯', name:'Sharp Mind',     unlocked: best >= 10  },
+                { icon:'⚡', name:'Lightning Fast', unlocked: best >= 15  },
+                { icon:'💎', name:'Diamond Brain',  unlocked: best >= 20  },
+                { icon:'🎖️', name:'Veteran',        unlocked: games >= 10 },
+                { icon:'👑', name:'Quiz King',      unlocked: wins >= 5   },
+                { icon:'🚀', name:'Unstoppable',    unlocked: streak >= 5 },
+            ];
+        }
+
+        function renderAchievements(games, wins, best, streak) {
+            const achievements = [
+                { icon:'🎮', name:'First Game',     desc:'Play your first game',       unlocked: games >= 1  },
+                { icon:'🏆', name:'First Win',      desc:'Win your first match',        unlocked: wins >= 1   },
+                { icon:'🔥', name:'On Fire',        desc:'Win 3 games in a row',        unlocked: streak >= 3 },
+                { icon:'🎯', name:'Sharp Mind',     desc:'Score 10+ in a single game',  unlocked: best >= 10  },
+                { icon:'⚡', name:'Lightning Fast', desc:'Score 15+ in a single game',  unlocked: best >= 15  },
+                { icon:'💎', name:'Diamond Brain',  desc:'Score 20+ in a single game',  unlocked: best >= 20  },
+                { icon:'🎖️', name:'Veteran',       desc:'Play 10 games total',         unlocked: games >= 10 },
+                { icon:'👑', name:'Quiz King',      desc:'Win 5 matches total',         unlocked: wins >= 5   },
+                { icon:'🚀', name:'Unstoppable',    desc:'Win 5 games in a row',        unlocked: streak >= 5 },
+            ];
+
+            document.getElementById('ach-grid').innerHTML = achievements.map(a => `
+                <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'}">
+                    ${a.unlocked ? '<div class="ach-unlocked-tag">✓ Unlocked</div>' : ''}
+                    <div class="ach-icon">${a.icon}</div>
+                    <div class="ach-name">${a.name}</div>
+                    <div class="ach-desc">${a.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function showNotFound() {
+            document.getElementById('not-found').style.display = 'block';
+            document.getElementById('profile-content').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz — Leaderboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        /* ── NAVBAR ── */
+        #main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .nav-logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        .nav-logo span { color: white; }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: white; background-color: #1e1e3a; }
+        .nav-links a.nav-active { color: white; background-color: #1e1e3a; }
+
+        .nav-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .nav-play-btn {
+            padding: 8px 22px;
+            background-color: #a78bfa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-play-btn:hover { background-color: #7c3aed; }
+
+        .nav-logout-btn {
+            padding: 8px 16px;
+            background: transparent;
+            color: #666;
+            border: 1px solid #1e1e3a;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-logout-btn:hover { border-color: #f87171; color: #f87171; }
+
+        /* Push content below fixed navbar */
+        body > .page-content > .main,
+        .main {
+            padding-top: 88px;
+        }
+
+        /* Push content below fixed nav */
+        .main { padding-top: 80px !important; }
+
+        body {
+            background-color: #0a0a14;
+            color: white;
+            min-height: 100vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .logo { font-size: 22px; font-weight: 700; color: #a78bfa; }
+        .logo span { color: white; }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: white; background-color: #1e1e3a; }
+
+        .nav-play {
+            background-color: #a78bfa;
+            color: white !important;
+            font-weight: 600;
+        }
+
+        .nav-play:hover { background-color: #7c3aed !important; }
+
+        .main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 56px 24px;
+        }
+
+        /* HEADER */
+        .page-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .page-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #a78bfa;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .page-header h1 { font-size: 44px; font-weight: 900; margin-bottom: 12px; }
+        .page-header p { font-size: 15px; color: #555; }
+
+        /* PODIUM */
+        .podium {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 48px;
+            min-height: 200px;
+        }
+
+        .podium-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .podium-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .podium-name {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            max-width: 90px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .podium-score { font-size: 13px; color: #666; }
+
+        .podium-block {
+            width: 90px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            padding: 12px 0;
+        }
+
+        .first .podium-avatar {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0a0a14;
+            width: 68px;
+            height: 68px;
+            font-size: 26px;
+        }
+
+        .first .podium-block {
+            height: 100px;
+            background-color: #2a2010;
+            border: 1px solid #fbbf24;
+        }
+
+        .second .podium-avatar {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            color: #0a0a14;
+        }
+
+        .second .podium-block {
+            height: 75px;
+            background-color: #1e1e2a;
+            border: 1px solid #9ca3af;
+        }
+
+        .third .podium-avatar {
+            background: linear-gradient(135deg, #cd7c54, #b45309);
+            color: #0a0a14;
+        }
+
+        .third .podium-block {
+            height: 55px;
+            background-color: #2a1a10;
+            border: 1px solid #cd7c54;
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: #a78bfa;
+            color: white;
+        }
+
+        /* TABLE */
+        .lb-table {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .lb-table-header {
+            display: grid;
+            grid-template-columns: 60px 1fr 120px 100px;
+            padding: 14px 24px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #444;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #1e1e3a;
+            text-transform: uppercase;
+        }
+
+        .lb-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 120px 100px;
+            padding: 16px 24px;
+            align-items: center;
+            border-bottom: 1px solid #1e1e3a;
+            transition: background-color 0.2s;
+        }
+
+        .lb-row:last-child { border-bottom: none; }
+        .lb-row:hover { background-color: #12122a; }
+
+        .lb-row.highlight {
+            background-color: #1a1a3a;
+            border-left: 3px solid #a78bfa;
+        }
+
+        .rank-col { font-size: 18px; font-weight: 800; }
+        .rank-1 { color: #fbbf24; }
+        .rank-2 { color: #9ca3af; }
+        .rank-3 { color: #cd7c54; }
+        .rank-other { color: #555; font-size: 14px; }
+
+        .player-col {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .player-ava {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .player-name { font-size: 15px; font-weight: 600; }
+
+        .you-tag {
+            font-size: 11px;
+            background-color: #1e1e3a;
+            color: #a78bfa;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 6px;
+        }
+
+        .score-col { font-size: 16px; font-weight: 800; color: #a78bfa; }
+        .games-col { font-size: 14px; color: #555; }
+
+        .empty {
+            text-align: center;
+            padding: 64px 24px;
+            color: #444;
+        }
+
+        .empty div { font-size: 48px; margin-bottom: 16px; }
+
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: #444;
+            font-size: 14px;
+        }
+
+        /* YOUR RANK BANNER */
+        .your-rank-banner {
+            background-color: #1a1a3a;
+            border: 1px solid #2a2a5a;
+            border-radius: 16px;
+            padding: 20px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .your-rank-banner p { font-size: 14px; color: #888; }
+        .your-rank-banner h3 { font-size: 22px; font-weight: 800; color: #a78bfa; }
+
+        .play-btn {
+            padding: 12px 32px;
+            background-color: #a78bfa;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .play-btn:hover { background-color: #7c3aed; }
+        /* COUNTRY FLAG */
+        .player-flag {
+            font-size: 16px;
+            margin-right: 4px;
+        }
+
+        /* LOADING OVERLAY */
+        .auth-loading {
+            position: fixed;
+            inset: 0;
+            background-color: #0a0a14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .auth-loading .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #1e1e3a;
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes confettiFall {
+            0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .auth-loading p {
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <!-- AUTH LOADING OVERLAY -->
+    <div class="auth-loading" id="auth-loading">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="navbar.js"></script>
+
+    <nav>
+        <div class="logo">⚡ Incentive<span>Quiz</span></div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="leaderboard.html" style="color:white">Leaderboard</a>
+            <a href="profile.html">Profile</a>
+            <a href="game.html" class="nav-play">⚡ Play</a>
+        </div>
+    </nav>
+
+    <div class="main">
+
+        <div class="page-header">
+            <div class="page-label">HALL OF FAME</div>
+            <h1>🏆 Leaderboard</h1>
+            <p>The smartest players in IncentiveQuiz. Can you reach the top?</p>
+        </div>
+
+        <div class="podium" id="podium">
+            <div class="loading">Loading top players...</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('best', this)">Best Score</button>
+            <button class="tab-btn" onclick="switchTab('wins', this)">Most Wins</button>
+            <button class="tab-btn" onclick="switchTab('games', this)">Most Played</button>
+            <button class="tab-btn" onclick="switchTab('friends', this)">👥 Friends</button>
+        </div>
+
+        <div class="lb-table">
+            <div class="lb-table-header">
+                <div>Rank</div>
+                <div>Player</div>
+                <div>Best Score</div>
+                <div>Games</div>
+            </div>
+            <div id="lb-body">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <div class="your-rank-banner" id="rank-banner" style="display:none">
+            <div>
+                <p>Your current rank</p>
+                <h3 id="your-rank-text">#—</h3>
+            </div>
+            <div>
+                <p>Your best score</p>
+                <h3 id="your-best-text">0 pts</h3>
+            </div>
+            <button class="play-btn" onclick="window.location.href='game.html'">
+                ⚡ Improve Rank
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+
+        let currentUsername = '';
+        let allPlayers = [];
+        let currentTab = 'best';
+
+        
+        function viewUserProfile(uid) {
+            window.location.href = 'user-profile.html?uid=' + uid;
+        }
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            document.getElementById('auth-loading').style.display = 'none';
+            document.getElementById('page-content').style.display = 'block';
+            if (loader) loader.style.display = 'none';
+            if (content) content.style.display = 'block';
+            renderNavbar('leaderboard');
+            const doc = await db.collection('users').doc(user.uid).get();
+            if (doc.exists) {
+                currentUsername = doc.data().username;
+            }
+
+            loadLeaderboard('best');
+            
+        });
+
+        async function loadLeaderboard(sortBy) {
+            currentTab = sortBy;
+
+            // Map tab to Firestore field
+            const fieldMap = {
+                best: 'best',
+                wins: 'wins',
+                games: 'games'
+            };
+
+            const field = fieldMap[sortBy];
+
+            try {
+                const snap = await db.collection('users')
+                    .orderBy(field, 'desc')
+                    .limit(20)
+                    .get();
+
+                allPlayers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+                renderPodium(allPlayers);
+                renderTable(allPlayers, field);
+                showYourRank(allPlayers, field);
+                launchConfetti();
+
+            } catch (e) {
+                document.getElementById('lb-body').innerHTML =
+                    '<div class="empty"><div>⚠️</div><p>Could not load leaderboard.</p></div>';
+            }
+            const flag = getCountryFlag();
+
+            return `
+                <div class="lb-row ${isYou ? 'highlight' : ''}">
+                    <div class="rank-col">${rankDisplay}</div>
+                    <div class="player-col">
+                        <div class="player-ava">${(p.username||'P')[0].toUpperCase()}</div>
+                        <div>
+                            <span class="player-flag">${isYou ? flag : '🌍'}</span>
+                            <span class="player-name" style="${isYou ? 'color:#a78bfa' : 'cursor:pointer'}"
+                                onclick="${isYou ? '' : `viewUserProfile('${p.uid}')`}">
+                                ${p.username}
+                            </span>
+                            ${isYou ? '<span class="you-tag">You</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="score-col">${displayVal}</div>
+                    <div class="games-col">${p.games || 0} games</div>
+                </div>
+            `;
+        }
+        function getCountryFlag() {
+            try {
+                const locale = navigator.language || 'en-IN';
+                const region = locale.split('-')[1] || 'IN';
+                return region.toUpperCase().replace(/./g, c =>
+                    String.fromCodePoint(c.charCodeAt(0) + 127397)
+                );
+            } catch(e) {
+                return '🌍';
+            }
+        }
+        function launchConfetti() {
+            const colors = ['#a78bfa','#4ade80','#fb923c','#fbbf24','#60a5fa'];
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const piece = document.createElement('div');
+                    piece.style.cssText = `
+                        position:fixed;
+                        width:${Math.random()*8+5}px;
+                        height:${Math.random()*8+5}px;
+                        background:${colors[Math.floor(Math.random()*colors.length)]};
+                        left:${Math.random()*100}vw;
+                        top:-20px;
+                        border-radius:2px;
+                        z-index:9999;
+                        pointer-events:none;
+                        animation:confettiFall ${Math.random()*2+2}s linear forwards;
+                    `;
+                    document.body.appendChild(piece);
+                    setTimeout(() => piece.remove(), 4000);
+                }, i * 50);
+            }
+        }
+
+        function renderPodium(players) {
+            const top3 = players.slice(0, 3);
+            if (top3.length < 1) {
+                document.getElementById('podium').innerHTML =
+                    '<div class="empty"><div>🏜️</div><p>No players yet.</p></div>';
+                return;
+            }
+
+            // Order: 2nd, 1st, 3rd
+            const order = [top3[1], top3[0], top3[2]];
+            const classes = ['second', 'first', 'third'];
+            const medals = ['🥈', '🥇', '🥉'];
+
+            document.getElementById('podium').innerHTML = order.map((p, i) => {
+                if (!p) return '';
+                const isYou = p.username === currentUsername;
+                return `
+                    <div class="podium-slot ${classes[i]}">
+                        <div class="podium-avatar ${classes[i]}">
+                            ${p.username[0].toUpperCase()}
+                        </div>
+                        <div class="podium-name" style="${isYou ? 'color:#a78bfa' : ''}">
+                            ${p.username}
+                        </div>
+                        <div class="podium-score">${p.best || 0} pts</div>
+                        <div class="podium-block">${medals[i]}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.getElementById('lb-body').innerHTML = players.map((p, i) => {
+            const isYou = p.username === currentUsername;
+            const rankDisplay = i < 3
+                ? `<span class="${rankClasses[i]}">${medals[i]}</span>`
+                : `<span class="rank-other">#${i + 1}</span>`;
+
+            const displayVal = currentTab === 'wins'
+                ? (p.wins || 0) + ' wins'
+                : currentTab === 'games'
+                ? (p.games || 0) + ' games'
+                : (p.best || 0) + ' pts';
+
+            return `
+                <div class="lb-row ${isYou ? 'highlight' : ''}">
+                    <div class="rank-col">${rankDisplay}</div>
+                    <div class="player-col">
+                        <div class="player-ava">${(p.username || 'P')[0].toUpperCase()}</div>
+                        <div>
+                            <span class="player-name"
+                                style="${isYou ? 'color:#a78bfa' : 'cursor:pointer'}"
+                                onclick="${isYou ? '' : `viewUserProfile('${p.uid}')`}">
+                                ${p.username}
+                            </span>
+                            ${isYou ? '<span class="you-tag">You</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="score-col">${displayVal}</div>
+                    <div class="games-col">${p.games || 0} games</div>
+                </div>
+            `;
+        }).join('');
+
+        function showYourRank(players, field) {
+            const rank = players.findIndex(p => p.username === currentUsername) + 1;
+            const banner = document.getElementById('rank-banner');
+
+            if (rank > 0) {
+                const you = players.find(p => p.username === currentUsername);
+                banner.style.display = 'flex';
+                document.getElementById('your-rank-text').textContent = '#' + rank;
+                document.getElementById('your-best-text').textContent = (you.best || 0) + ' pts';
+            }
+        }
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (tab === 'friends') {
+                loadFriendsLeaderboard();
+            } else {
+                loadLeaderboard(tab);
+            }
+        }
+        async function loadFriendsLeaderboard() {
+            const uid = localStorage.getItem('iqUID');
+            document.getElementById('lb-body').innerHTML = '<div class="loading">Loading friends...</div>';
+            document.getElementById('podium').innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                // Get friends list
+                const friendsSnap = await db.collection('users').doc(uid)
+                    .collection('friends').get();
+
+                if (friendsSnap.empty) {
+                    document.getElementById('lb-body').innerHTML = `
+                        <div class="empty">
+                            <div>👥</div>
+                            <p>You have no friends yet. Add friends from the leaderboard!</p>
+                        </div>`;
+                    document.getElementById('podium').innerHTML = '';
+                    return;
+                }
+
+                // Get friend UIDs
+                const friendUIDs = friendsSnap.docs.map(d => d.id);
+
+                // Also include yourself
+                friendUIDs.push(uid);
+
+                // Load all their user data
+                const friendData = [];
+                for (const fUID of friendUIDs) {
+                    const doc = await db.collection('users').doc(fUID).get();
+                    if (doc.exists) {
+                        friendData.push({ uid: doc.id, ...doc.data() });
+                    }
+                }
+
+                // Sort by best score
+                friendData.sort((a, b) => (b.best || 0) - (a.best || 0));
+
+                renderPodium(friendData);
+                renderTable(friendData, 'best');
+                showYourRank(friendData, 'best');
+                launchConfetti();
+
+            } catch(e) {
+                console.log('Friends leaderboard error:', e);
+                document.getElementById('lb-body').innerHTML = '<div class="empty"><div>⚠️</div><p>Could not load friends leaderboard.</p></div>';
+            }
+        }
+
+    </script>
+</body>
+</html>

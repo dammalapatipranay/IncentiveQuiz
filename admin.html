@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz — Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0a0a14;
+            color: white;
+            min-height: 100vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+        }
+
+        .logo span { color: white; }
+
+        .admin-badge {
+            background-color: #2a1a3a;
+            color: #a78bfa;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid #a78bfa;
+            letter-spacing: 1px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logout-btn {
+            font-size: 13px;
+            color: #666;
+            background: none;
+            border: 1px solid #1e1e3a;
+            padding: 7px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            border-color: #f87171;
+            color: #f87171;
+        }
+
+        .main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* PAGE HEADER */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .page-header p {
+            font-size: 14px;
+            color: #555;
+            margin-top: 4px;
+        }
+
+        .add-btn {
+            padding: 12px 28px;
+            background-color: #a78bfa;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background-color: #7c3aed;
+            transform: translateY(-2px);
+        }
+
+        /* STATS BAR */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 14px;
+            padding: 20px 16px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: 800;
+            color: #a78bfa;
+            margin-bottom: 4px;
+        }
+
+        .stat-lbl {
+            font-size: 12px;
+            color: #555;
+        }
+
+        /* FILTERS */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 9px 16px;
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .filter-select:focus {
+            border-color: #a78bfa;
+        }
+
+        .search-input {
+            padding: 9px 16px;
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            width: 260px;
+        }
+
+        .search-input:focus {
+            border-color: #a78bfa;
+        }
+
+        .filter-count {
+            margin-left: auto;
+            font-size: 13px;
+            color: #555;
+        }
+
+        /* QUESTION TABLE */
+        .q-table {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .q-table-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 120px 100px 120px;
+            padding: 14px 24px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #444;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #1e1e3a;
+            text-transform: uppercase;
+        }
+
+        .q-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 120px 100px 120px;
+            padding: 16px 24px;
+            align-items: center;
+            border-bottom: 1px solid #1e1e3a;
+            transition: background-color 0.2s;
+            gap: 8px;
+        }
+
+        .q-row:last-child { border-bottom: none; }
+        .q-row:hover { background-color: #12122a; }
+
+        .q-num {
+            font-size: 13px;
+            color: #444;
+            font-weight: 600;
+        }
+
+        .q-text {
+            font-size: 14px;
+            color: #ddd;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .q-cat {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: #1e1e3a;
+            color: #a78bfa;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .diff-easy {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: #0d2a1a;
+            color: #4ade80;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .diff-medium {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: #2a1a0d;
+            color: #fb923c;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .diff-hard {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: #2a0d0d;
+            color: #f87171;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .q-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .edit-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid #2a2a4a;
+            color: #a78bfa;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .edit-btn:hover {
+            background-color: #1e1e3a;
+        }
+
+        .del-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid #2a1a1a;
+            color: #f87171;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .del-btn:hover {
+            background-color: #2a0d0d;
+        }
+
+        /* EMPTY / LOADING */
+        .empty-state {
+            text-align: center;
+            padding: 64px 24px;
+            color: #444;
+        }
+
+        .empty-state div { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 15px; }
+
+        /* MODAL OVERLAY */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            margin-bottom: 8px;
+            display: block;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #0a0a14;
+            border: 1px solid #1e1e3a;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #a78bfa;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #0a0a14;
+            border: 1px solid #1e1e3a;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: #a78bfa;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .option-input-wrap {
+            position: relative;
+        }
+
+        .option-label-tag {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            font-weight: 700;
+            color: #a78bfa;
+            background-color: #1e1e3a;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-input-wrap .form-input {
+            padding-left: 44px;
+        }
+
+        .correct-answer-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .answer-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #1e1e3a;
+            background: transparent;
+            color: #666;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .answer-btn.selected {
+            background-color: #a78bfa;
+            border-color: #a78bfa;
+            color: white;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .save-btn {
+            flex: 1;
+            padding: 14px;
+            background-color: #a78bfa;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .save-btn:hover { background-color: #7c3aed; }
+        .save-btn:disabled {
+            background-color: #3a3a6a;
+            cursor: not-allowed;
+        }
+
+        .cancel-btn {
+            padding: 14px 28px;
+            background: transparent;
+            color: #666;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid #1e1e3a;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cancel-btn:hover {
+            border-color: #f87171;
+            color: #f87171;
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background-color: #0d2a1a;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .toast-error {
+            background-color: #2a0d0d;
+            border: 1px solid #f87171;
+            color: #f87171;
+        }
+
+        /* ACCESS DENIED */
+        .access-denied {
+            display: none;
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .access-denied div { font-size: 64px; margin-bottom: 20px; }
+        .access-denied h2 { font-size: 28px; color: #f87171; margin-bottom: 12px; }
+        .access-denied p { color: #555; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+
+    <!-- NAVBAR -->
+    <nav>
+        <div style="display:flex;align-items:center;gap:12px">
+            <div class="logo">⚡ Incentive<span>Quiz</span></div>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+        <div class="nav-right">
+            <span style="font-size:13px;color:#555" id="admin-email"></span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <!-- ACCESS DENIED -->
+    <div class="access-denied" id="access-denied">
+        <div>🚫</div>
+        <h2>Access Denied</h2>
+        <p>You do not have admin permission to access this page.</p>
+    </div>
+
+    <!-- MAIN PANEL -->
+    <div class="main" id="admin-main" style="display:none">
+
+        <div class="page-header">
+            <div>
+                <h1>Question Manager</h1>
+                <p>Add, edit and delete quiz questions stored in Firebase</p>
+            </div>
+            <button class="add-btn" onclick="openModal()">+ Add Question</button>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-val" id="total-q">—</div>
+                <div class="stat-lbl">Total Questions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="easy-q">—</div>
+                <div class="stat-lbl">Easy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="medium-q">—</div>
+                <div class="stat-lbl">Medium</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="hard-q">—</div>
+                <div class="stat-lbl">Hard</div>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters">
+            <input class="search-input" type="text"
+                placeholder="🔍 Search questions..."
+                oninput="filterQuestions()" id="search-box" />
+            <select class="filter-select" onchange="filterQuestions()" id="cat-filter">
+                <option value="">All Categories</option>
+                <option>Indian GK</option>
+                <option>World GK</option>
+                <option>Science</option>
+                <option>Maths</option>
+                <option>Current Affairs</option>
+                <option>History</option>
+                <option>Cricket</option>
+                <option>Sports</option>
+                <option>Bollywood</option>
+                <option>OTT and Web Series</option>
+            </select>
+            <select class="filter-select" onchange="filterQuestions()" id="diff-filter">
+                <option value="">All Difficulties</option>
+                <option>easy</option>
+                <option>medium</option>
+                <option>hard</option>
+            </select>
+            <span class="filter-count" id="filter-count"></span>
+        </div>
+
+        <!-- TABLE -->
+        <div class="q-table">
+            <div class="q-table-header">
+                <div>#</div>
+                <div>Question</div>
+                <div>Category</div>
+                <div>Difficulty</div>
+                <div>Actions</div>
+            </div>
+            <div id="q-list">
+                <div class="empty-state">
+                    <div>⏳</div>
+                    <p>Loading questions...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ADD / EDIT MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h2 id="modal-title">Add New Question</h2>
+
+            <div class="form-group">
+                <label class="form-label">QUESTION TEXT</label>
+                <input class="form-input" type="text" id="f-question"
+                    placeholder="Type your question here..." />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">ANSWER OPTIONS</label>
+                <div class="options-grid">
+                    <div class="option-input-wrap">
+                        <div class="option-label-tag">A</div>
+                        <input class="form-input" type="text" id="f-opt0" placeholder="Option A" />
+                    </div>
+                    <div class="option-input-wrap">
+                        <div class="option-label-tag">B</div>
+                        <input class="form-input" type="text" id="f-opt1" placeholder="Option B" />
+                    </div>
+                    <div class="option-input-wrap">
+                        <div class="option-label-tag">C</div>
+                        <input class="form-input" type="text" id="f-opt2" placeholder="Option C" />
+                    </div>
+                    <div class="option-input-wrap">
+                        <div class="option-label-tag">D</div>
+                        <input class="form-input" type="text" id="f-opt3" placeholder="Option D" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">CORRECT ANSWER</label>
+                <div class="correct-answer-row">
+                    <button class="answer-btn" onclick="selectAnswer(0)" id="ans-0">A</button>
+                    <button class="answer-btn" onclick="selectAnswer(1)" id="ans-1">B</button>
+                    <button class="answer-btn" onclick="selectAnswer(2)" id="ans-2">C</button>
+                    <button class="answer-btn" onclick="selectAnswer(3)" id="ans-3">D</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">CATEGORY</label>
+                <select class="form-select" id="f-category">
+                    <option>Indian GK</option>
+                    <option>World GK</option>
+                    <option>Science</option>
+                    <option>Maths</option>
+                    <option>Current Affairs</option>
+                    <option>History</option>
+                    <option>Cricket</option>
+                    <option>Sports</option>
+                    <option>Bollywood</option>
+                    <option>OTT and Web Series</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">DIFFICULTY</label>
+                <select class="form-select" id="f-difficulty">
+                    <option value="easy">Easy — Safety Zone (Q1–Q3)</option>
+                    <option value="medium">Medium — Danger Zone (Q4–Q8)</option>
+                    <option value="hard">Hard — Expert Zone (Q9+)</option>
+                </select>
+            </div>
+
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+                <button class="save-btn" id="save-btn" onclick="saveQuestion()">Save Question</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+
+        // ── ADMIN EMAILS ──
+        // Add your email here — only these emails can access admin panel
+        const ADMIN_EMAILS = [
+            'dammalapatipranay@gmail.com' // replace with your actual email
+        ];
+
+        let allQuestions = [];
+        let editingId = null;
+        let selectedAnswer = 0;
+
+        // ── AUTH CHECK ──
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('admin-email').textContent = user.email;
+
+            // Check if admin
+            if (!ADMIN_EMAILS.includes(user.email)) {
+                document.getElementById('access-denied').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('admin-main').style.display = 'block';
+            loadQuestions();
+        });
+
+        // ── LOAD ALL QUESTIONS ──
+        async function loadQuestions() {
+            try {
+                const snap = await db.collection('questions')
+                    .orderBy('category')
+                    .get();
+
+                allQuestions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                updateStats();
+                renderTable(allQuestions);
+
+            } catch (e) {
+                showToast('Error loading questions: ' + e.message, 'error');
+            }
+        }
+
+        // ── UPDATE STATS ──
+        function updateStats() {
+            document.getElementById('total-q').textContent = allQuestions.length;
+            document.getElementById('easy-q').textContent =
+                allQuestions.filter(q => q.difficulty === 'easy').length;
+            document.getElementById('medium-q').textContent =
+                allQuestions.filter(q => q.difficulty === 'medium').length;
+            document.getElementById('hard-q').textContent =
+                allQuestions.filter(q => q.difficulty === 'hard').length;
+        }
+
+        // ── RENDER TABLE ──
+        function renderTable(list) {
+            const el = document.getElementById('q-list');
+            document.getElementById('filter-count').textContent =
+                list.length + ' question' + (list.length !== 1 ? 's' : '');
+
+            if (list.length === 0) {
+                el.innerHTML = `
+                    <div class="empty-state">
+                        <div>📭</div>
+                        <p>No questions found. Add your first question!</p>
+                    </div>`;
+                return;
+            }
+
+            el.innerHTML = list.map((q, i) => `
+                <div class="q-row">
+                    <div class="q-num">${i + 1}</div>
+                    <div class="q-text">${q.question}</div>
+                    <div><span class="q-cat">${q.category}</span></div>
+                    <div><span class="diff-${q.difficulty}">${q.difficulty}</span></div>
+                    <div class="q-actions">
+                        <button class="edit-btn" onclick="editQuestion('${q.id}')">Edit</button>
+                        <button class="del-btn" onclick="deleteQuestion('${q.id}', '${q.question.replace(/'/g, "\\'")}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ── FILTER ──
+        function filterQuestions() {
+            const search = document.getElementById('search-box').value.toLowerCase();
+            const cat = document.getElementById('cat-filter').value;
+            const diff = document.getElementById('diff-filter').value;
+
+            const filtered = allQuestions.filter(q => {
+                const matchSearch = !search || q.question.toLowerCase().includes(search);
+                const matchCat = !cat || q.category === cat;
+                const matchDiff = !diff || q.difficulty === diff;
+                return matchSearch && matchCat && matchDiff;
+            });
+
+            renderTable(filtered);
+        }
+
+        // ── OPEN MODAL ──
+        function openModal(prefill) {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Add New Question';
+            document.getElementById('save-btn').textContent = 'Save Question';
+
+            // Clear form
+            document.getElementById('f-question').value = '';
+            document.getElementById('f-opt0').value = '';
+            document.getElementById('f-opt1').value = '';
+            document.getElementById('f-opt2').value = '';
+            document.getElementById('f-opt3').value = '';
+            document.getElementById('f-category').value = 'Indian GK';
+            document.getElementById('f-difficulty').value = 'easy';
+            selectAnswer(0);
+
+            document.getElementById('modal').classList.add('open');
+        }
+
+        // ── EDIT QUESTION ──
+        function editQuestion(id) {
+            const q = allQuestions.find(x => x.id === id);
+            if (!q) return;
+
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Edit Question';
+            document.getElementById('save-btn').textContent = 'Update Question';
+
+            document.getElementById('f-question').value = q.question;
+            document.getElementById('f-opt0').value = q.options[0];
+            document.getElementById('f-opt1').value = q.options[1];
+            document.getElementById('f-opt2').value = q.options[2];
+            document.getElementById('f-opt3').value = q.options[3];
+            document.getElementById('f-category').value = q.category;
+            document.getElementById('f-difficulty').value = q.difficulty;
+            selectAnswer(q.answer);
+
+            document.getElementById('modal').classList.add('open');
+        }
+
+        // ── CLOSE MODAL ──
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+            editingId = null;
+        }
+
+        // ── SELECT CORRECT ANSWER ──
+        function selectAnswer(index) {
+            selectedAnswer = index;
+            ['A', 'B', 'C', 'D'].forEach((l, i) => {
+                const btn = document.getElementById('ans-' + i);
+                btn.classList.toggle('selected', i === index);
+            });
+        }
+
+        // ── SAVE QUESTION ──
+        async function saveQuestion() {
+            const question = document.getElementById('f-question').value.trim();
+            const opt0 = document.getElementById('f-opt0').value.trim();
+            const opt1 = document.getElementById('f-opt1').value.trim();
+            const opt2 = document.getElementById('f-opt2').value.trim();
+            const opt3 = document.getElementById('f-opt3').value.trim();
+            const category = document.getElementById('f-category').value;
+            const difficulty = document.getElementById('f-difficulty').value;
+
+            if (!question || !opt0 || !opt1 || !opt2 || !opt3) {
+                showToast('Please fill in all fields.', 'error');
+                return;
+            }
+
+            const data = {
+                question,
+                options: [opt0, opt1, opt2, opt3],
+                answer: selectedAnswer,
+                category,
+                difficulty,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                if (editingId) {
+                    await db.collection('questions').doc(editingId).update(data);
+                    showToast('Question updated successfully!', 'success');
+                } else {
+                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('questions').add(data);
+                    showToast('Question added successfully!', 'success');
+                }
+
+                closeModal();
+                loadQuestions();
+
+            } catch (e) {
+                showToast('Error saving: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = editingId ? 'Update Question' : 'Save Question';
+            }
+        }
+
+        // ── DELETE QUESTION ──
+        async function deleteQuestion(id, text) {
+            const confirm = window.confirm(
+                'Delete this question?\n\n"' + text + '"'
+            );
+            if (!confirm) return;
+
+            try {
+                await db.collection('questions').doc(id).delete();
+                showToast('Question deleted.', 'success');
+                loadQuestions();
+            } catch (e) {
+                showToast('Error deleting: ' + e.message, 'error');
+            }
+        }
+
+        // ── TOAST ──
+        function showToast(msg, type) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = 'toast toast-' + type + ' show';
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        // ── LOGOUT ──
+        function logout() {
+            auth.signOut().then(() => {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            });
+        }
+
+        // Close modal on overlay click
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+    </script>
+</body>
+</html>

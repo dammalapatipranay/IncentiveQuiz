@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz — Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        /* ── NAVBAR ── */
+        #main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .nav-logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        .nav-logo span { color: white; }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: white; background-color: #1e1e3a; }
+        .nav-links a.nav-active { color: white; background-color: #1e1e3a; }
+
+        .nav-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .nav-play-btn {
+            padding: 8px 22px;
+            background-color: #a78bfa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-play-btn:hover { background-color: #7c3aed; }
+
+        .nav-logout-btn {
+            padding: 8px 16px;
+            background: transparent;
+            color: #666;
+            border: 1px solid #1e1e3a;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-logout-btn:hover { border-color: #f87171; color: #f87171; }
+
+        /* Push content below fixed navbar */
+        body > .page-content > .main,
+        .main {
+            padding-top: 88px;
+        }
+
+        /* Push content below fixed nav */
+        .main { padding-top: 80px !important; }
+        body {
+            background-color: #0a0a14;
+            color: white;
+            min-height: 100vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 48px;
+            background-color: #0d0d1f;
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .logo { font-size: 22px; font-weight: 700; color: #a78bfa; }
+        .logo span { color: white; }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: white; background-color: #1e1e3a; }
+
+        .nav-play {
+            background-color: #a78bfa;
+            color: white !important;
+            font-weight: 600;
+        }
+
+        .nav-play:hover { background-color: #7c3aed !important; }
+
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        /* PROFILE HEADER */
+        .profile-header {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 24px;
+            padding: 40px 48px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            margin-bottom: 28px;
+        }
+
+        .big-avatar {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .profile-info h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+        .profile-info p { font-size: 14px; color: #555; margin-bottom: 16px; }
+
+        .profile-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge-pill {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            background-color: #1e1e3a;
+            color: #a78bfa;
+            border: 1px solid #2a2a4a;
+        }
+
+        .profile-actions {
+            margin-left: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            padding: 12px 32px;
+            background-color: #a78bfa;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover { background-color: #7c3aed; }
+
+        .btn-secondary {
+            padding: 12px 32px;
+            background-color: transparent;
+            color: #aaa;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid #1e1e3a;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover { border-color: #a78bfa; color: white; }
+
+        /* STATS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            padding: 24px 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover { border-color: #a78bfa; transform: translateY(-2px); }
+        .stat-icon { font-size: 26px; margin-bottom: 10px; }
+        .stat-value { font-size: 28px; font-weight: 800; color: #a78bfa; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; color: #555; }
+
+        /* TWO COL */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 20px;
+            padding: 28px;
+        }
+
+        .panel-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+
+        /* WIN RATE */
+        .win-rate-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            padding: 16px 0;
+        }
+
+        .donut-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .donut-wrap svg { transform: rotate(-90deg); }
+
+        .donut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .donut-pct { font-size: 22px; font-weight: 800; color: #a78bfa; }
+        .donut-lbl { font-size: 11px; color: #555; }
+
+        .win-rate-legend { display: flex; flex-direction: column; gap: 12px; }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .legend-label { color: #888; flex: 1; }
+        .legend-val { font-weight: 700; color: white; }
+
+        /* HISTORY */
+        .history-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #1e1e3a;
+            font-size: 14px;
+        }
+
+        .history-row:last-child { border-bottom: none; }
+
+        .history-left { display: flex; flex-direction: column; gap: 4px; }
+        .history-cat { font-weight: 600; color: #ddd; font-size: 14px; }
+        .history-date { font-size: 12px; color: #444; }
+
+        .history-right { display: flex; align-items: center; gap: 12px; }
+        .history-score { font-size: 13px; color: #888; }
+
+        .result-win {
+            font-size: 12px; font-weight: 700; padding: 4px 12px;
+            border-radius: 20px; background-color: #0d2a1a; color: #4ade80;
+        }
+
+        .result-loss {
+            font-size: 12px; font-weight: 700; padding: 4px 12px;
+            border-radius: 20px; background-color: #2a0d0d; color: #f87171;
+        }
+
+        .no-data { text-align: center; color: #444; font-size: 14px; padding: 32px 0; }
+        .loading { text-align: center; color: #444; font-size: 14px; padding: 32px 0; }
+
+        /* ACHIEVEMENTS */
+        .full-panel {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+
+        .full-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        .achievement {
+            background-color: #0a0a14;
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .achievement.unlocked { border-color: #a78bfa; background-color: #12122a; }
+        .achievement.unlocked:hover { transform: translateY(-2px); }
+        .achievement.locked { opacity: 0.4; filter: grayscale(1); }
+
+        .ach-icon { font-size: 32px; margin-bottom: 10px; }
+        .ach-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        .ach-desc { font-size: 11px; color: #555; line-height: 1.4; }
+
+        .ach-unlocked-tag {
+            position: absolute;
+            top: -8px; right: 10px;
+            background-color: #a78bfa;
+            color: white;
+            font-size: 10px; font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        /* HISTORY TABLE */
+        .filter-tabs { display: flex; gap: 6px; }
+
+        .filter-btn {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid #1e1e3a;
+            background: transparent;
+            color: #666;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background-color: #a78bfa;
+            border-color: #a78bfa;
+            color: white;
+        }
+        /* LOADING OVERLAY */
+        .auth-loading {
+            position: fixed;
+            inset: 0;
+            background-color: #0a0a14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .auth-loading .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #1e1e3a;
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .auth-loading p {
+            font-size: 14px;
+            color: #555;
+        }
+        /* RANK BADGE */
+        .rank-badge-display {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-left: 12px;
+            vertical-align: middle;
+        }
+
+        .rank-bronze   { background-color: #2a1a0d; color: #cd7c54; border: 1px solid #cd7c54; }
+        .rank-silver   { background-color: #1e1e2a; color: #9ca3af; border: 1px solid #9ca3af; }
+        .rank-gold     { background-color: #2a2010; color: #fbbf24; border: 1px solid #fbbf24; }
+        .rank-platinum { background-color: #1a1a3a; color: #a78bfa; border: 1px solid #a78bfa; }
+        .rank-badge-display { display:inline-block; }
+        /* ACHIEVEMENT GLOW */
+        .achievement.unlocked {
+            border-color: #a78bfa;
+            background-color: #12122a;
+            box-shadow: 0 0 16px rgba(167, 139, 250, 0.2);
+            animation: achieveGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes achieveGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(167,139,250,0.15); }
+            50%       { box-shadow: 0 0 24px rgba(167,139,250,0.35); }
+        }
+
+        /* WIN RATE FRACTION */
+        .win-fraction {
+            font-size: 12px;
+            color: #555;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- AUTH LOADING OVERLAY -->
+<div class="auth-loading" id="auth-loading">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+</div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="navbar.js"></script>
+
+    <nav>
+        <div class="logo">⚡ Incentive<span>Quiz</span></div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="profile.html" style="color:white">Profile</a>
+            <a href="game.html" class="nav-play">⚡ Play</a>
+        </div>
+    </nav>
+
+    <div class="main">
+
+        <div class="profile-header">
+            <div class="big-avatar" id="big-avatar">...</div>
+            <div class="profile-info">
+                <h1 id="profile-name">Loading...</h1>
+                <p id="profile-joined">—</p>
+                <div class="profile-badges" id="profile-badges"></div>
+            </div>
+            <div class="profile-actions">
+                <button class="btn-primary" onclick="window.location.href='game.html'">⚡ Play Now</button>
+                <button class="btn-secondary" onclick="openFriends()">👥 Friends</button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎮</div>
+                <div class="stat-value" id="s-games">—</div>
+                <div class="stat-label">Games Played</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="s-wins">—</div>
+                <div class="stat-label">Total Wins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value" id="s-best">—</div>
+                <div class="stat-label">Best Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="s-streak">—</div>
+                <div class="stat-label">Win Streak</div>
+            </div>
+        </div>
+        
+        <div class="two-col">
+
+            <div class="panel">
+                <div class="panel-title">📊 Win Rate</div>
+                <div class="win-rate-wrap">
+                    <div class="donut-wrap">
+                        <svg width="120" height="120" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="50" fill="none"
+                                stroke="#1e1e3a" stroke-width="16"/>
+                            <circle cx="60" cy="60" r="50" fill="none"
+                                stroke="#a78bfa" stroke-width="16"
+                                stroke-dasharray="314"
+                                stroke-dashoffset="314"
+                                id="donut-arc"
+                                stroke-linecap="round"/>
+                        </svg>
+                        <div class="donut-center">
+                            <div class="donut-pct" id="win-pct">0%</div>
+                            <div class="donut-lbl">win rate</div>
+                        </div>
+                    </div>
+                    <div class="win-rate-legend">
+                        <div class="legend-row">
+                            <div class="legend-dot" style="background:#a78bfa"></div>
+                            <span class="legend-label">Wins</span>
+                            <span class="legend-val" id="leg-wins">0</span>
+                        </div>
+                        <div class="legend-row">
+                            <div class="legend-dot" style="background:#1e1e3a"></div>
+                            <span class="legend-label">Losses</span>
+                            <span class="legend-val" id="leg-losses">0</span>
+                        </div>
+                        <div class="legend-row">
+                            <div class="legend-dot" style="background:#2a2a4a"></div>
+                            <span class="legend-label">Total</span>
+                            <span class="legend-val" id="leg-total">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center"
+                    onclick="window.location.href='game-history.html'">
+                    <span>🕹️ Game History</span>
+                    <span style="font-size:12px;color:#a78bfa;font-weight:600">View All →</span>
+                </div>
+                <div id="recent-list"><div class="loading">Loading...</div></div>
+            </div>
+
+        </div>
+        <!-- LEADERBOARD PANEL -->
+        <div class="full-panel">
+            <div class="full-panel-header">
+                <div class="panel-title" style="margin:0">🏆 Leaderboard</div>
+                <div style="display:flex;gap:6px">
+                    <button class="filter-btn active" id="p-lb-all" onclick="switchProfileLb('all')">All</button>
+                    <button class="filter-btn" id="p-lb-friends" onclick="switchProfileLb('friends')">👥 Friends</button>
+                </div>
+            </div>
+            <div id="profile-lb-list"><div class="loading">Loading...</div></div>
+            <a href="leaderboard.html" style="display:block;text-align:center;margin-top:16px;font-size:13px;color:#a78bfa;text-decoration:none">
+                View full leaderboard →
+            </a>
+        </div>
+        <!-- CATEGORY PERFORMANCE -->
+        <div class="full-panel">
+            <div class="full-panel-header">
+                <div class="panel-title" style="margin:0">📊 Category Performance</div>
+                <span style="font-size:13px;color:#555" id="strongest-cat"></span>
+            </div>
+            <div id="cat-performance"></div>
+        </div>
+        <!-- ACHIEVEMENTS -->
+        <div class="full-panel">
+            <div class="full-panel-header">
+                <div class="panel-title" style="margin:0">🎖️ Achievements</div>
+                <span style="font-size:13px;color:#555" id="ach-count">0 / 9 unlocked</span>
+            </div>
+            <div class="achievements-grid" id="ach-grid"></div>
+        </div>
+
+        <!-- FRIENDS PANEL -->
+        <div class="full-panel" id="friends-panel" style="display:none">
+            <div class="full-panel-header">
+                <div class="panel-title" style="margin:0">👥 Friends</div>
+                <button onclick="closeFriends()" style="background:none;border:none;color:#666;cursor:pointer;font-size:20px">✕</button>
+            </div>
+
+            <!-- PENDING REQUESTS -->
+            <div style="margin-bottom:20px">
+                <div style="font-size:14px;font-weight:600;color:#a78bfa;margin-bottom:12px">
+                    📩 Friend Requests <span id="req-count" style="background:#a78bfa;color:white;font-size:11px;padding:2px 8px;border-radius:20px;margin-left:6px"></span>
+                </div>
+                <div id="requests-list">
+                    <div class="no-data">No pending requests.</div>
+                </div>
+            </div>
+
+            <!-- FRIENDS LIST -->
+            <div>
+                <div style="font-size:14px;font-weight:600;color:#a78bfa;margin-bottom:12px">✅ My Friends</div>
+                <div id="friends-list">
+                    <div class="no-data">No friends yet. Find players on the leaderboard and add them!</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        
+        let allHistory = [];
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            localStorage.setItem('iqUID', user.uid);
+
+            const loader = document.getElementById('auth-loading');
+            const content = document.getElementById('page-content');
+            if (loader) loader.style.display = 'none';
+            if (content) content.style.display = 'block';
+            renderNavbar('profile');
+
+            try {
+                const doc = await db.collection('users').doc(user.uid).get();
+                if (!doc.exists) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const data = doc.data();
+                const username = data.username || 'Player';
+                localStorage.setItem('iqUsername', username);
+
+                // Profile header
+                document.getElementById('big-avatar').textContent = username[0].toUpperCase();
+                let rankClass = 'rank-bronze', rankText = '🥉 Bronze';
+                if (best >= 20)      { rankClass = 'rank-platinum'; rankText = '💎 Platinum'; }
+                else if (best >= 15) { rankClass = 'rank-gold';     rankText = '🥇 Gold'; }
+                else if (best >= 10) { rankClass = 'rank-silver';   rankText = '🥈 Silver'; }
+                document.getElementById('profile-name').innerHTML =
+                    username + `<span class="rank-badge-display ${rankClass}" style="font-size:12px;padding:3px 12px;border-radius:20px;margin-left:10px;font-weight:700">${rankText}</span>`;
+
+
+                document.getElementById('profile-name').innerHTML =
+                    username + `<span class="rank-badge-display ${rankClass}">${rankText}</span>`;
+
+                // Joined date
+                const joined = data.createdAt
+                    ? data.createdAt.toDate().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+                    : 'Recently';
+                document.getElementById('profile-joined').textContent = 'Playing since ' + joined;
+
+                // Stats
+                const games  = data.games  || 0;
+                const wins   = data.wins   || 0;
+                const best   = data.best   || 0;
+                const streak = data.streak || 0;
+
+                document.getElementById('s-games').textContent  = games;
+                document.getElementById('s-wins').textContent   = wins;
+                document.getElementById('s-best').textContent   = best;
+                document.getElementById('s-streak').textContent = streak;
+
+                // Win rate donut
+                const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
+                const offset  = 314 - (winRate / 100) * 314;
+                document.getElementById('donut-arc').style.strokeDashoffset = offset;
+                document.getElementById('win-pct').textContent    = winRate + '%';
+                // Win fraction label
+                const fracEl = document.getElementById('win-fraction');
+                if (fracEl) fracEl.textContent = wins + ' / ' + games + ' games won';
+                document.getElementById('leg-wins').textContent   = wins;
+                document.getElementById('leg-losses').textContent = games - wins;
+                document.getElementById('leg-total').textContent  = games;
+                
+                // Achievements
+                renderAchievements(games, wins, best, streak);
+
+            } catch(e) {
+                console.log('Profile load error:', e.message);
+            }
+
+            // Load history separately
+            try {
+                const histSnap = await db.collection('users').doc(user.uid)
+                    .collection('history')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .get();
+
+                allHistory = histSnap.docs.map(d => d.data());
+
+            } catch(e) {
+                console.log('History orderBy failed, trying fallback:', e.message);
+                try {
+                    const histSnap2 = await db.collection('users').doc(user.uid)
+                        .collection('history')
+                        .limit(50)
+                        .get();
+
+                    allHistory = histSnap2.docs.map(d => d.data())
+                        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+ 
+                } catch(e2) {
+                    allHistory = [];
+                }
+            }
+            renderRecent(allHistory);
+            renderCategoryPerformance(data.categoryStats || {});
+            renderFullHistory('all');
+            loadProfileLeaderboard();
+        });
+
+        function renderRecent(list) {
+            const el = document.getElementById('recent-list');
+            if (list.length === 0) {
+                el.innerHTML = '<div class="no-data">No games yet. Play your first!</div>';
+                return;
+            }
+            el.innerHTML = list.slice(0, 5).map(g => `
+                <div class="history-row">
+                    <div class="history-left">
+                        <span class="history-cat">${g.category || 'General'}</span>
+                        <span class="history-date">${g.date || ''}</span>
+                    </div>
+                    <div class="history-right">
+                        <span class="history-score">${g.score || 0} correct</span>
+                        <span class="${g.won ? 'result-win' : 'result-loss'}">
+                            ${g.won ? '🏆 Win' : '💀 Q' + (g.eliminatedAt || 0)}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAchievements(games, wins, best, streak) {
+            const achievements = [
+                { icon: '🎮', name: 'First Game',     desc: 'Play your first game',       unlocked: games >= 1  },
+                { icon: '🏆', name: 'First Win',      desc: 'Win your first match',        unlocked: wins >= 1   },
+                { icon: '🔥', name: 'On Fire',        desc: 'Win 3 games in a row',        unlocked: streak >= 3 },
+                { icon: '🎯', name: 'Sharp Mind',     desc: 'Score 10+ in a single game',  unlocked: best >= 10  },
+                { icon: '⚡', name: 'Lightning Fast', desc: 'Score 15+ in a single game',  unlocked: best >= 15  },
+                { icon: '💎', name: 'Diamond Brain',  desc: 'Score 20+ in a single game',  unlocked: best >= 20  },
+                { icon: '🎖️', name: 'Veteran',       desc: 'Play 10 games total',         unlocked: games >= 10 },
+                { icon: '👑', name: 'Quiz King',      desc: 'Win 5 matches total',         unlocked: wins >= 5   },
+                { icon: '🚀', name: 'Unstoppable',    desc: 'Win 5 games in a row',        unlocked: streak >= 5 },
+            ];
+
+            const unlocked = achievements.filter(a => a.unlocked).length;
+            document.getElementById('ach-count').textContent = unlocked + ' / ' + achievements.length + ' unlocked';
+
+            const earned = achievements.filter(a => a.unlocked);
+            document.getElementById('profile-badges').innerHTML = earned.length > 0
+                ? earned.map(a => `<span class="badge-pill">${a.icon} ${a.name}</span>`).join('')
+                : '<span style="color:#444;font-size:13px">No achievements yet — play a game!</span>';
+
+            document.getElementById('ach-grid').innerHTML = achievements.map(a => `
+                <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'}">
+                    ${a.unlocked ? '<div class="ach-unlocked-tag">✓ Unlocked</div>' : ''}
+                    <div class="ach-icon">${a.icon}</div>
+                    <div class="ach-name">${a.name}</div>
+                    <div class="ach-desc">${a.desc}</div>
+                </div>
+            `).join('');
+        }
+        let friendsPanelOpen = false;
+
+        async function openFriends() {
+            const panel = document.getElementById('friends-panel');
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth' });
+            await loadFriends();
+            await loadFriendRequests();
+        }
+
+        function closeFriends() {
+            document.getElementById('friends-panel').style.display = 'none';
+        }
+
+        async function loadFriends() {
+            const uid = localStorage.getItem('iqUID');
+            const el = document.getElementById('friends-list');
+
+            try {
+                const snap = await db.collection('users').doc(uid)
+                    .collection('friends')
+                    .orderBy('addedAt', 'desc')
+                    .get();
+
+                if (snap.empty) {
+                    el.innerHTML = '<div class="no-data">No friends yet. Find players on the leaderboard!</div>';
+                    return;
+                }
+
+                el.innerHTML = snap.docs.map(d => {
+                    const f = d.data();
+                    return `
+                        <div class="history-row">
+                            <div style="display:flex;align-items:center;gap:12px;flex:1">
+                                <div style="width:36px;height:36px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:white;flex-shrink:0">
+                                    ${(f.username || 'P')[0].toUpperCase()}
+                                </div>
+                                <span style="font-weight:600;color:#ddd">${f.username || 'Player'}</span>
+                            </div>
+                            <div style="display:flex;gap:8px">
+                                <button onclick="viewProfile('${f.uid}')" style="padding:6px 14px;background:transparent;border:1px solid #2a2a4a;color:#a78bfa;border-radius:6px;font-size:12px;cursor:pointer">
+                                    View Profile
+                                </button>
+                                <button onclick="removeFriend('${f.uid}', '${f.username}')" style="padding:6px 14px;background:transparent;border:1px solid #2a1a1a;color:#f87171;border-radius:6px;font-size:12px;cursor:pointer">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                el.innerHTML = '<div class="no-data">You have no friends yet.</div>';
+            }
+        }
+
+        async function loadFriendRequests() {
+            const uid = localStorage.getItem('iqUID');
+            const el = document.getElementById('requests-list');
+
+            try {
+                const snap = await db.collection('friendRequests')
+                    .where('to', '==', uid)
+                    .where('status', '==', 'pending')
+                    .get();
+
+                const count = snap.size;
+                const countEl = document.getElementById('req-count');
+                countEl.textContent = count > 0 ? count : '';
+                countEl.style.display = count > 0 ? 'inline' : 'none';
+
+                if (snap.empty) {
+                    el.innerHTML = '<div class="no-data">No pending requests.</div>';
+                    return;
+                }
+
+                el.innerHTML = snap.docs.map(d => {
+                    const r = d.data();
+                    return `
+                        <div class="history-row">
+                            <div style="display:flex;align-items:center;gap:12px;flex:1">
+                                <div style="width:36px;height:36px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:white;flex-shrink:0">
+                                    ${(r.fromName || 'P')[0].toUpperCase()}
+                                </div>
+                                <span style="font-weight:600;color:#ddd">${r.fromName || 'Player'}</span>
+                            </div>
+                            <div style="display:flex;gap:8px">
+                                <button onclick="acceptRequest('${d.id}', '${r.from}', '${r.fromName}')" style="padding:6px 14px;background:#a78bfa;border:none;color:white;border-radius:6px;font-size:12px;cursor:pointer">
+                                    ✅ Accept
+                                </button>
+                                <button onclick="rejectRequest('${d.id}')" style="padding:6px 14px;background:transparent;border:1px solid #2a1a1a;color:#f87171;border-radius:6px;font-size:12px;cursor:pointer">
+                                    ❌ Reject
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                el.innerHTML = '<div class="no-data">You have no new requests.</div>';
+            }
+        }
+
+        async function acceptRequest(reqId, fromUID, fromName) {
+            const uid = localStorage.getItem('iqUID');
+            const myName = localStorage.getItem('iqUsername') || 'Player';
+            try {
+                await db.collection('users').doc(uid)
+                    .collection('friends').doc(fromUID).set({
+                        uid: fromUID,
+                        username: fromName,
+                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                await db.collection('users').doc(fromUID)
+                    .collection('friends').doc(uid).set({
+                        uid: uid,
+                        username: myName,
+                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                await db.collection('friendRequests').doc(reqId)
+                    .update({ status: 'accepted' });
+
+                await loadFriends();
+                await loadFriendRequests();
+                alert('You are now friends with ' + fromName + '!');
+            } catch(e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function rejectRequest(reqId) {
+            try {
+                await db.collection('friendRequests').doc(reqId)
+                    .update({ status: 'rejected' });
+                await loadFriendRequests();
+            } catch(e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function removeFriend(friendUID, friendName) {
+            if (!confirm('Remove ' + friendName + ' from friends?')) return;
+            const uid = localStorage.getItem('iqUID');
+            try {
+                await db.collection('users').doc(uid)
+                    .collection('friends').doc(friendUID).delete();
+                await db.collection('users').doc(friendUID)
+                    .collection('friends').doc(uid).delete();
+                await loadFriends();
+                alert(friendName + ' removed from friends.');
+            } catch(e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        function viewProfile(uid) {
+            window.location.href = 'user-profile.html?uid=' + uid;
+        }
+        function switchProfileLb(tab) {
+            document.getElementById('p-lb-all').classList.toggle('active', tab === 'all');
+            document.getElementById('p-lb-friends').classList.toggle('active', tab === 'friends');
+            if (tab === 'all') loadProfileLeaderboard();
+            else loadProfileFriendsLeaderboard();
+        }
+
+        async function loadProfileLeaderboard() {
+            const el = document.getElementById('profile-lb-list');
+            const username = localStorage.getItem('iqUsername');
+            try {
+                const snap = await db.collection('users').orderBy('best', 'desc').limit(5).get();
+                if (snap.empty) { el.innerHTML = '<div class="no-data">No players yet.</div>'; return; }
+                const medals = ['🥇', '🥈', '🥉'];
+                el.innerHTML = snap.docs.map((d, i) => {
+                    const u = d.data();
+                    const isYou = u.username === username;
+                    return `
+                        <div class="history-row">
+                            <div style="display:flex;align-items:center;gap:12px;flex:1">
+                                <span style="font-size:18px;width:28px">${medals[i] || '#' + (i+1)}</span>
+                                <div style="width:32px;height:32px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0">
+                                    ${(u.username||'P')[0].toUpperCase()}
+                                </div>
+                                <span style="font-weight:500;color:${isYou ? '#a78bfa' : '#ddd'}">
+                                    ${u.username} ${isYou ? '(You)' : ''}
+                                </span>
+                            </div>
+                            <span style="color:#a78bfa;font-weight:700">${u.best || 0} pts</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch(e) {
+                el.innerHTML = '<div class="no-data">Could not load.</div>';
+            }
+        }
+
+        async function loadProfileFriendsLeaderboard() {
+            const el = document.getElementById('profile-lb-list');
+            const uid = localStorage.getItem('iqUID');
+            const username = localStorage.getItem('iqUsername');
+            try {
+                el.innerHTML = '<div class="loading">Loading friends...</div>';
+                const friendsSnap = await db.collection('users').doc(uid).collection('friends').get();
+                if (friendsSnap.empty) {
+                    el.innerHTML = '<div class="no-data">No friends yet!</div>';
+                    return;
+                }
+                const friendUIDs = [...friendsSnap.docs.map(d => d.id), uid];
+                const friendData = [];
+                for (const fUID of friendUIDs) {
+                    const doc = await db.collection('users').doc(fUID).get();
+                    if (doc.exists) friendData.push(doc.data());
+                }
+                friendData.sort((a, b) => (b.best || 0) - (a.best || 0));
+                const medals = ['🥇', '🥈', '🥉'];
+                el.innerHTML = friendData.slice(0, 5).map((u, i) => {
+                    const isYou = u.username === username;
+                    return `
+                        <div class="history-row">
+                            <div style="display:flex;align-items:center;gap:12px;flex:1">
+                                <span style="font-size:18px;width:28px">${medals[i] || '#'+(i+1)}</span>
+                                <div style="width:32px;height:32px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0">
+                                    ${(u.username||'P')[0].toUpperCase()}
+                                </div>
+                                <span style="font-weight:500;color:${isYou ? '#a78bfa' : '#ddd'}">
+                                    ${u.username} ${isYou ? '(You)' : ''}
+                                </span>
+                            </div>
+                            <span style="color:#a78bfa;font-weight:700">${u.best || 0} pts</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch(e) {
+                el.innerHTML = '<div class="no-data">Could not load friends.</div>';
+            }
+        }
+        function renderCategoryPerformance(catStats) {
+            const el = document.getElementById('cat-performance');
+            const strongEl = document.getElementById('strongest-cat');
+
+            if (!catStats || Object.keys(catStats).length === 0) {
+                el.innerHTML = '<div class="no-data">Play more games to see your category performance.</div>';
+                return;
+            }
+
+            // Find strongest category
+            let strongest = null;
+            let highestAvg = 0;
+
+            const categories = Object.entries(catStats).map(([cat, stats]) => {
+                const avg = stats.games > 0 ? Math.round(stats.totalScore / stats.games) : 0;
+                const winRate = stats.games > 0 ? Math.round((stats.wins / stats.games) * 100) : 0;
+                if (avg > highestAvg) { highestAvg = avg; strongest = cat; }
+                return { cat, avg, winRate, games: stats.games, wins: stats.wins };
+            }).sort((a, b) => b.avg - a.avg);
+
+            if (strongest) {
+                strongEl.textContent = '🏆 Strongest: ' + strongest;
+            }
+
+            el.innerHTML = categories.map(c => `
+                <div class="history-row">
+                    <div style="flex:1">
+                        <div style="font-weight:600;color:#ddd;font-size:14px">${c.cat}</div>
+                        <div style="font-size:12px;color:#555;margin-top:3px">${c.games} games · ${c.wins} wins</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px">
+                        <div style="text-align:right">
+                            <div style="font-size:13px;color:#888">Avg Score</div>
+                            <div style="font-size:16px;font-weight:700;color:#a78bfa">${c.avg}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-size:13px;color:#888">Win Rate</div>
+                            <div style="font-size:16px;font-weight:700;color:#4ade80">${c.winRate}%</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+    </script>
+</body>
+</html>

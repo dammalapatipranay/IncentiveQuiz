@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0a0a14;
+            color: white;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 64px;
+            background-color: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #1e1e3a;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #a78bfa;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            color: white;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 18px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+            background-color: #1e1e3a;
+        }
+
+        .nav-login {
+            background-color: #a78bfa;
+            color: white !important;
+            font-weight: 600;
+            padding: 8px 22px;
+            border-radius: 8px;
+            margin-left: 8px;
+        }
+
+        .nav-login:hover {
+            background-color: #7c3aed !important;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 20px 80px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background-color: #1e1e3a;
+            color: #a78bfa;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 20px;
+            margin-bottom: 28px;
+            border: 1px solid #2e2e5a;
+            letter-spacing: 1px;
+        }
+
+        .hero h1 {
+            font-size: 64px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 .purple {
+            color: #a78bfa;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #888;
+            max-width: 480px;
+            line-height: 1.7;
+            margin-bottom: 48px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-primary {
+            padding: 16px 48px;
+            font-size: 17px;
+            font-weight: 700;
+            background-color: #a78bfa;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #7c3aed;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            padding: 16px 48px;
+            font-size: 17px;
+            font-weight: 600;
+            background-color: transparent;
+            color: #aaa;
+            border: 1px solid #2e2e5a;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            border-color: #a78bfa;
+            color: white;
+        }
+
+        /* ── STATS BAR ── */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 64px;
+            padding: 48px 20px;
+            border-top: 1px solid #1e1e3a;
+            border-bottom: 1px solid #1e1e3a;
+            background-color: #0d0d1f;
+        }
+
+        .stat h3 {
+            font-size: 32px;
+            font-weight: 800;
+            color: #a78bfa;
+        }
+
+        .stat p {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* ── HOW TO PLAY ── */
+        .section {
+            padding: 100px 64px;
+            text-align: center;
+        }
+
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #a78bfa;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .section h2 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .section .desc {
+            font-size: 16px;
+            color: #666;
+            max-width: 480px;
+            margin: 0 auto 64px;
+            line-height: 1.7;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .step-card {
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 20px;
+            padding: 36px 28px;
+            width: 230px;
+            text-align: left;
+            transition: all 0.3s;
+        }
+
+        .step-card:hover {
+            border-color: #a78bfa;
+            transform: translateY(-4px);
+        }
+
+        .step-icon {
+            width: 48px;
+            height: 48px;
+            background-color: #1e1e3a;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        .step-card h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .step-card p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* ── CATEGORIES ── */
+        .categories-section {
+            padding: 100px 64px;
+            background-color: #0d0d1f;
+            text-align: center;
+        }
+
+        .cat-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cat-pill {
+            background-color: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            color: #ccc;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 14px;
+            cursor: default;
+            transition: all 0.2s;
+        }
+
+        .cat-pill:hover {
+            border-color: #a78bfa;
+            color: #a78bfa;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 44px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 17px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 32px 64px;
+            border-top: 1px solid #1e1e3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        footer .logo {
+            font-size: 18px;
+        }
+
+        footer p {
+            font-size: 13px;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav>
+        <div class="logo">⚡ Incentive<span>Quiz</span></div>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#how-to-play">How to Play</a>
+            <a href="#categories">Categories</a>
+            <a href="login.html" class="nav-login">Login</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-badge">🎮 FREE TO PLAY</div>
+        <h1>Quiz Your Way<br>To The <span class="purple">Top</span></h1>
+        <p>Answer fast. Outlast 9 other players. Climb the leaderboard. Become the ultimate quiz champion.</p>
+        <div class="hero-buttons">
+            <button class="btn-primary" onclick="window.location.href='login.html'">Play Now — Free</button>
+            <button class="btn-secondary" onclick="document.getElementById('how-to-play').scrollIntoView({behavior:'smooth'})">How it Works</button>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-bar">
+        <div class="stat">
+            <h3>10</h3>
+            <p>Players per match</p>
+        </div>
+        <div class="stat">
+            <h3>10+</h3>
+            <p>Question categories</p>
+        </div>
+        <div class="stat">
+            <h3>∞</h3>
+            <p>Questions per game</p>
+        </div>
+        <div class="stat">
+            <h3>10s</h3>
+            <p>max per question</p>
+        </div>
+    </div>
+
+    <!-- HOW TO PLAY -->
+    <div class="section" id="how-to-play">
+        <div class="section-label">HOW IT WORKS</div>
+        <h2>Simple. Fast. Brutal.</h2>
+        <p class="desc">Four steps stand between you and the top of the leaderboard.</p>
+        <div class="steps">
+            <div class="step-card">
+                <div class="step-icon">🎮</div>
+                <h3>Join a Game</h3>
+                <p>Pick your category and enter a live game with 9 random players.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">⚡</div>
+                <h3>Answer Fast</h3>
+                <p>Same questions for all. 10 seconds max per question. Think quick.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">💀</div>
+                <h3>Survive</h3>
+                <p>One wrong answer and you are eliminated. No second chances.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">🏆</div>
+                <h3>Win</h3>
+                <p>Be the last player standing and top the leaderboard. Glory is yours.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="categories-section" id="categories">
+        <div class="section-label">CATEGORIES</div>
+        <h2>Every Topic. Your Strength.</h2>
+        <p style="color:#666; margin-bottom:48px; font-size:16px">Pick what you know best and dominate.</p>
+        <div class="cat-grid">
+            <div class="cat-pill">🇮🇳 Indian GK</div>
+            <div class="cat-pill">🌍 World GK</div>
+            <div class="cat-pill">🔬 Science</div>
+            <div class="cat-pill">🧮 Maths</div>
+            <div class="cat-pill">📰 Current Affairs</div>
+            <div class="cat-pill">📖 History</div>
+            <div class="cat-pill">🏏 Cricket</div>
+            <div class="cat-pill">⚽ Sports</div>
+            <div class="cat-pill">🎵 Bollywood</div>
+            <div class="cat-pill">🎭 OTT and Web Series</div>
+            <div class="cat-pill">😎 Celeb from Photo</div>
+            <div class="cat-pill">🚩 Flag Quiz</div>
+            <div class="cat-pill">🏛️ Monument Quiz</div>
+            <div class="cat-pill">👕 Jersey Quiz</div>
+            <div class="cat-pill">🎬 Movie Scene Quiz</div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-section">
+        <h2>Ready to Prove<br>You Are The <span style="color:#a78bfa">Smartest?</span></h2>
+        <p>Join thousands of players. Play Online.</p>
+        <button class="btn-primary" onclick="window.location.href='login.html'">Create Free Account</button>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="logo">⚡ Incentive<span>Quiz</span></div>
+        <p>IncentiveQuiz 2026 — Free to play. Built for champions.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncentiveQuiz — Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+
+        body {
+            background-color: #0a0a14;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            display: none;
+            background-color: #0d0d1f;
+            border: 1px solid #1e1e3a;
+            border-radius: 24px;
+            padding: 48px 40px;
+            width: 420px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: #a78bfa;
+            margin-bottom: 6px;
+        }
+
+        .logo span { color: white; }
+
+        .subtitle {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 36px;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: #0a0a14;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 28px;
+            border: 1px solid #1e1e3a;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background-color: #a78bfa;
+            color: white;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            background-color: #0a0a14;
+            border: 1px solid #1e1e3a;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus { border-color: #a78bfa; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #a78bfa;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: all 0.2s;
+        }
+
+        .submit-btn:hover { background-color: #7c3aed; }
+        .submit-btn:disabled {
+            background-color: #3a3a6a;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            background-color: #2a0d0d;
+            border: 1px solid #f87171;
+            color: #f87171;
+            font-size: 13px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            display: none;
+            text-align: left;
+        }
+
+        .success-msg {
+            background-color: #0d2a1a;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            font-size: 13px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            display: none;
+            text-align: left;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background-color: #1e1e3a;
+        }
+
+        .back-home {
+            display: block;
+            margin-top: 24px;
+            color: #555;
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back-home:hover { color: #a78bfa; }
+    </style>
+</head>
+<body>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+
+    <div class="card">
+        <div class="logo">⚡ Incentive<span>Quiz</span></div>
+        <div class="subtitle">Free to play. Built for champions.</div>
+
+        <div class="tabs">
+            <button class="tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+            <button class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+        </div>
+
+        <div class="error-msg" id="error-msg"></div>
+        <div class="success-msg" id="success-msg"></div>
+
+        <input type="text" id="username" placeholder="Username" style="display:none" />
+        <input type="email" id="email" placeholder="Email address" />
+        <input type="password" id="password" placeholder="Password" />
+        <input type="password" id="confirm-password" placeholder="Confirm Password" style="display:none" />
+
+        <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">Login</button>
+
+        <a href="index.html" class="back-home">← Back to Home</a>
+    </div>
+
+    <script>
+        let currentTab = 'login';
+
+        // If already logged in — go straight to dashboard
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                window.location.href = 'dashboard.html';
+            } else {
+                // User is not logged in — now show the login card
+                document.querySelector('.card').style.display = 'block';
+            }
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            clearMessages();
+
+            document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+            document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+
+            document.getElementById('username').style.display = tab === 'signup' ? 'block' : 'none';
+            document.getElementById('confirm-password').style.display = tab === 'signup' ? 'block' : 'none';
+            document.getElementById('submit-btn').textContent = tab === 'login' ? 'Login' : 'Create Account';
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('success-msg').style.display = 'none';
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('success-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('error-msg').style.display = 'none';
+        }
+
+        function clearMessages() {
+            document.getElementById('error-msg').style.display = 'none';
+            document.getElementById('success-msg').style.display = 'none';
+        }
+
+        function setLoading(loading) {
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = loading;
+            btn.textContent = loading
+                ? 'Please wait...'
+                : (currentTab === 'login' ? 'Login' : 'Create Account');
+        }
+
+        async function handleSubmit() {
+            clearMessages();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                showError('Please fill in all fields.');
+                return;
+            }
+
+            if (currentTab === 'signup') {
+                const username = document.getElementById('username').value.trim();
+                const confirm = document.getElementById('confirm-password').value.trim();
+
+                if (!username) { showError('Please enter a username.'); return; }
+                if (username.length < 3) { showError('Username must be at least 3 characters.'); return; }
+                if (password !== confirm) { showError('Passwords do not match.'); return; }
+                if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+
+                setLoading(true);
+                try {
+                    // Create account
+                    const result = await auth.createUserWithEmailAndPassword(email, password);
+
+                    // Save username to Firestore
+                    await db.collection('users').doc(result.user.uid).set({
+                        username: username,
+                        email: email,
+                        games: 0,
+                        wins: 0,
+                        best: 0,
+                        streak: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Save username to localStorage for quick access
+                    localStorage.setItem('iqUsername', username);
+                    localStorage.setItem('iqUID', result.user.uid);
+
+                    showSuccess('Account created! Taking you to dashboard...');
+                    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+
+                } catch (err) {
+                    setLoading(false);
+                    if (err.code === 'auth/email-already-in-use') {
+                        showError('This email is already registered. Try logging in.');
+                    } else {
+                        showError(err.message);
+                    }
+                }
+
+            } else {
+                setLoading(true);
+                try {
+                    const result = await auth.signInWithEmailAndPassword(email, password);
+
+                    // Load username from Firestore
+                    const doc = await db.collection('users').doc(result.user.uid).get();
+                    if (doc.exists) {
+                        localStorage.setItem('iqUsername', doc.data().username);
+                        localStorage.setItem('iqUID', result.user.uid);
+                    }
+
+                    window.location.href = 'dashboard.html';
+
+                } catch (err) {
+                    setLoading(false);
+                    if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                        showError('Wrong email or password. Please try again.');
+                    } else {
+                        showError(err.message);
+                    }
+                }
+            }
+        }
+        
+    </script>
+
+</body>
+</html>
