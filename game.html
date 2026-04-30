@@ -1,1280 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IncentiveQuiz — Game</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Arial, sans-serif;
-        }
-
-        body {
-            background-color: #0a0a14;
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ── TOP BAR ── */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 40px;
-            background-color: #0d0d1f;
-            border-bottom: 1px solid #1e1e3a;
-        }
-
-        .top-bar .logo { font-size: 20px; font-weight: 700; color: #a78bfa; }
-        .top-bar .logo span { color: white; }
-
-        .player-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: #aaa;
-        }
-
-        .player-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #a78bfa, #7c3aed);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
-            color: white;
-        }
-
-        /* ── GAME AREA ── */
-        .game-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
-        /* ── SCREENS ── */
-        .screen { display: none; width: 100%; max-width: 720px; }
-        .screen.active { display: flex; flex-direction: column; align-items: center; }
-
-        /* ── LOBBY ── */
-        .lobby-card {
-            background-color: #0d0d1f;
-            border: 1px solid #1e1e3a;
-            border-radius: 24px;
-            padding: 48px 40px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .lobby-card h2 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
-        .lobby-card p { color: #666; margin-bottom: 36px; font-size: 15px; }
-
-        .category-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 36px;
-        }
-
-        .cat-btn {
-            padding: 10px 18px;
-            border-radius: 100px;
-            border: 1px solid #2a2a4a;
-            background: transparent;
-            color: #aaa;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .cat-btn:hover, .cat-btn.selected {
-            border-color: #a78bfa;
-            color: #a78bfa;
-            background-color: #1a1a2e;
-        }
-
-        .start-btn {
-            padding: 16px 56px;
-            font-size: 18px;
-            font-weight: 700;
-            background-color: #a78bfa;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .start-btn:hover { background-color: #7c3aed; transform: translateY(-2px); }
-
-        /* ── COUNTDOWN ── */
-        .countdown-number {
-            font-size: 120px;
-            font-weight: 900;
-            color: #a78bfa;
-            line-height: 1;
-            animation: pulse 1s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        .countdown-text { font-size: 20px; color: #666; margin-top: 16px; }
-
-        /* ── QUIZ SCREEN ── */
-        .quiz-header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .question-count { font-size: 14px; color: #666; font-weight: 600; }
-
-        /* ── CIRCULAR TIMER ── */
-        .timer-wrap {
-            position: relative;
-            width: 64px;
-            height: 64px;
-            flex-shrink: 0;
-        }
-
-        .timer-wrap svg {
-            position: absolute;
-            top: 0; left: 0;
-            transform: rotate(-90deg);
-        }
-
-        .timer-bg {
-            fill: none;
-            stroke: #1e1e3a;
-            stroke-width: 5;
-        }
-
-        .timer-arc {
-            fill: none;
-            stroke: #a78bfa;
-            stroke-width: 5;
-            stroke-linecap: round;
-            stroke-dasharray: 163;
-            stroke-dashoffset: 0;
-            transition: stroke-dashoffset 1s linear, stroke 0.3s;
-        }
-
-        .timer-arc.danger { stroke: #f87171; }
-
-        .timer-num {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 800;
-            color: #a78bfa;
-            transition: color 0.3s;
-        }
-
-        .timer-num.danger { color: #f87171; }
-
-        .players-alive { font-size: 14px; color: #666; }
-        .players-alive span { color: #a78bfa; font-weight: 700; }
-
-        /* ── PROGRESS BAR ── */
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background-color: #1e1e3a;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.4s, background-color 0.5s;
-            background-color: #4ade80;
-        }
-
-        /* ── ZONE BADGE ── */
-        .zone-badge {
-            font-size: 12px;
-            font-weight: 700;
-            padding: 5px 16px;
-            border-radius: 20px;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-            transition: all 0.3s;
-        }
-
-        .zone-1 { background-color: #1a3a1a; color: #4ade80; }
-        .zone-2 { background-color: #3a2a1a; color: #fb923c; }
-        .zone-3 { background-color: #3a1a1a; color: #f87171; }
-
-        /* ── ZONE TRANSITION BANNER ── */
-        .zone-banner {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.8);
-            background-color: rgba(13, 13, 31, 0.95);
-            border: 2px solid #a78bfa;
-            border-radius: 20px;
-            padding: 32px 48px;
-            text-align: center;
-            z-index: 500;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
-        }
-
-        .zone-banner.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        .zone-banner-icon { font-size: 48px; margin-bottom: 12px; }
-        .zone-banner-title { font-size: 24px; font-weight: 800; color: #a78bfa; margin-bottom: 8px; }
-        .zone-banner-sub { font-size: 14px; color: #888; }
-
-        /* ── LIFELINE INDICATOR ── */
-        .lifeline-indicator {
-            font-size: 12px;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: inline-block;
-        }
-
-        .lifeline-available { background-color: #1a2a3a; color: #60a5fa; border: 1px solid #2a4a6a; }
-        .lifeline-used-warning { background-color: #3a2a0d; color: #fb923c; border: 1px solid #6a4a1a; }
-        .lifeline-gone { background-color: #1e1e3a; color: #555; border: 1px solid #2a2a4a; }
-
-        /* ── QUESTION ── */
-        .question-card {
-            width: 100%;
-            animation: slideUp 0.35s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .question-text {
-            font-size: 22px;
-            font-weight: 700;
-            text-align: center;
-            line-height: 1.5;
-            margin-bottom: 36px;
-            color: white;
-        }
-
-        /* ── OPTIONS ── */
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            width: 100%;
-        }
-
-        .option-btn {
-            padding: 18px 20px;
-            background-color: #0d0d1f;
-            border: 1px solid #1e1e3a;
-            border-radius: 16px;
-            color: white;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            text-align: left;
-            transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .option-btn:hover:not(:disabled) {
-            border-color: #a78bfa;
-            background-color: #1a1a2e;
-            transform: translateY(-2px);
-        }
-
-        .option-label {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background-color: #1e1e3a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 13px;
-            flex-shrink: 0;
-            transition: background-color 0.2s, color 0.2s;
-        }
-
-        /* Correct answer */
-        .option-btn.correct {
-            border-color: #4ade80;
-            background-color: #0d2a1a;
-            animation: flashGreen 0.4s ease-out;
-        }
-
-        .option-btn.correct .option-label {
-            background-color: #4ade80;
-            color: #0a0a14;
-        }
-
-        @keyframes flashGreen {
-            0% { background-color: #4ade80; }
-            100% { background-color: #0d2a1a; }
-        }
-
-        /* Wrong answer */
-        .option-btn.wrong {
-            border-color: #f87171;
-            background-color: #2a0d0d;
-            animation: shakeRed 0.5s ease-out;
-        }
-
-        .option-btn.wrong .option-label {
-            background-color: #f87171;
-            color: #0a0a14;
-        }
-
-        @keyframes shakeRed {
-            0%, 100% { transform: translateX(0); }
-            15% { transform: translateX(-8px); }
-            30% { transform: translateX(8px); }
-            45% { transform: translateX(-6px); }
-            60% { transform: translateX(6px); }
-            75% { transform: translateX(-3px); }
-            90% { transform: translateX(3px); }
-        }
-
-        /* Locked in answer */
-        .option-btn.locked-in {
-            border-color: #a78bfa;
-            background-color: #1a1a2e;
-        }
-
-        /* ── WAITING BANNER ── */
-        .waiting-banner {
-            margin-top: 16px;
-            font-size: 13px;
-            color: #a78bfa;
-            font-weight: 600;
-            letter-spacing: 1px;
-            animation: blink 1s ease-in-out infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        /* ── STREAK BANNER ── */
-        .streak-banner {
-            position: fixed;
-            top: 80px;
-            right: 24px;
-            background: linear-gradient(135deg, #7c3aed, #a78bfa);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            z-index: 400;
-            transform: translateX(200px);
-            transition: transform 0.3s;
-            pointer-events: none;
-        }
-
-        .streak-banner.show { transform: translateX(0); }
-
-        /* ── ELIMINATED SCREEN ── */
-        .eliminated-card {
-            background-color: #0d0d1f;
-            border: 1px solid #2a0d0d;
-            border-radius: 24px;
-            padding: 56px 40px;
-            text-align: center;
-            width: 100%;
-            animation: slideUp 0.4s ease-out;
-        }
-
-        .eliminated-icon { font-size: 72px; margin-bottom: 20px; }
-
-        .eliminated-card h2 {
-            font-size: 34px;
-            font-weight: 800;
-            color: #f87171;
-            margin-bottom: 10px;
-        }
-
-        .eliminated-card p { color: #666; font-size: 15px; margin-bottom: 28px; }
-
-        .score-display {
-            font-size: 52px;
-            font-weight: 900;
-            color: #a78bfa;
-            margin-bottom: 6px;
-        }
-
-        .score-label { font-size: 14px; color: #666; margin-bottom: 12px; }
-
-        /* Post game stats */
-        .post-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin: 20px 0 32px;
-        }
-
-        .post-stat {
-            background-color: #0a0a14;
-            border: 1px solid #1e1e3a;
-            border-radius: 12px;
-            padding: 14px 8px;
-            text-align: center;
-        }
-
-        .post-stat-val { font-size: 20px; font-weight: 800; color: #a78bfa; }
-        .post-stat-lbl { font-size: 11px; color: #555; margin-top: 4px; }
-
-        /* ── WIN SCREEN ── */
-        .win-card {
-            background-color: #0d0d1f;
-            border: 1px solid #1a3a1a;
-            border-radius: 24px;
-            padding: 56px 40px;
-            text-align: center;
-            width: 100%;
-            animation: slideUp 0.4s ease-out;
-        }
-
-        .win-card h2 {
-            font-size: 40px;
-            font-weight: 900;
-            color: #4ade80;
-            margin-bottom: 12px;
-        }
-
-        /* ── RANK BADGE ── */
-        .rank-badge {
-            display: inline-block;
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
-
-        .rank-bronze   { background-color: #2a1a0d; color: #cd7c54; border: 1px solid #cd7c54; }
-        .rank-silver   { background-color: #1e1e2a; color: #9ca3af; border: 1px solid #9ca3af; }
-        .rank-gold     { background-color: #2a2010; color: #fbbf24; border: 1px solid #fbbf24; }
-        .rank-platinum { background-color: #1a1a3a; color: #a78bfa; border: 1px solid #a78bfa; }
-
-        /* ── BUTTONS ── */
-        .replay-btn {
-            padding: 14px 44px;
-            font-size: 16px;
-            font-weight: 700;
-            background-color: #a78bfa;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: all 0.2s;
-        }
-
-        .replay-btn:hover { background-color: #7c3aed; transform: translateY(-2px); }
-
-        .home-btn {
-            padding: 14px 44px;
-            font-size: 16px;
-            font-weight: 600;
-            background-color: transparent;
-            color: #aaa;
-            border: 1px solid #2e2e5a;
-            border-radius: 12px;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: all 0.2s;
-        }
-
-        .home-btn:hover { border-color: #a78bfa; color: white; }
-
-        .btn-row {
-            display: flex;
-            gap: 14px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-
-        /* ── CONFETTI ── */
-        .confetti-piece {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
-            animation: confettiFall linear forwards;
-            pointer-events: none;
-            z-index: 9999;
-        }
-
-        @keyframes confettiFall {
-            0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-
-        /* ── AUTH LOADING ── */
-        .auth-loading {
-            position: fixed; inset: 0; background-color: #0a0a14;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; z-index: 9999;
-        }
-
-        .spinner {
-            width: 48px; height: 48px; border: 4px solid #1e1e3a;
-            border-top-color: #a78bfa; border-radius: 50%;
-            animation: spin 0.8s linear infinite; margin-bottom: 16px;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .auth-loading p { font-size: 14px; color: #555; }
-        .page-content { display: none; }
-
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IncentiveQuiz — Game</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif;}
+body{background:#0a0a14;color:white;min-height:100vh;display:flex;flex-direction:column;}
+.auth-loading{position:fixed;inset:0;background:#0a0a14;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
+.spinner{width:48px;height:48px;border:4px solid #1e1e3a;border-top-color:#a78bfa;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.auth-loading p{font-size:14px;color:#555;}
+.page-content{display:none;}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 40px;background:#0d0d1f;border-bottom:1px solid #1e1e3a;}
+.top-bar .logo{font-size:20px;font-weight:700;color:#a78bfa;cursor:pointer;}
+.top-bar .logo span{color:white;}
+.player-info{display:flex;align-items:center;gap:10px;font-size:14px;color:#aaa;}
+.player-avatar{width:36px;height:36px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:white;}
+.game-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;}
+.screen{display:none;width:100%;max-width:720px;}
+.screen.active{display:flex;flex-direction:column;align-items:center;}
+.lobby-card{background:#0d0d1f;border:1px solid #1e1e3a;border-radius:24px;padding:48px 40px;width:100%;text-align:center;}
+.lobby-card h2{font-size:32px;font-weight:800;margin-bottom:8px;}
+.lobby-card p{color:#666;margin-bottom:36px;font-size:15px;}
+.category-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:36px;}
+.cat-btn{padding:10px 18px;border-radius:100px;border:1px solid #2a2a4a;background:transparent;color:#aaa;font-size:13px;cursor:pointer;transition:all 0.2s;}
+.cat-btn:hover,.cat-btn.selected{border-color:#a78bfa;color:#a78bfa;background:#1a1a2e;}
+.start-btn{padding:16px 56px;font-size:18px;font-weight:700;background:#a78bfa;color:white;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s;}
+.start-btn:hover{background:#7c3aed;transform:translateY(-2px);}
+.countdown-number{font-size:120px;font-weight:900;color:#a78bfa;line-height:1;animation:pulse 1s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+.countdown-text{font-size:20px;color:#666;margin-top:16px;}
+.quiz-header{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.question-count{font-size:14px;color:#666;font-weight:600;}
+.players-alive{font-size:14px;color:#666;}
+.players-alive span{color:#a78bfa;font-weight:700;}
+.timer-wrap{position:relative;width:64px;height:64px;flex-shrink:0;}
+.timer-wrap svg{position:absolute;top:0;left:0;transform:rotate(-90deg);}
+.timer-bg{fill:none;stroke:#1e1e3a;stroke-width:5;}
+.timer-arc{fill:none;stroke:#a78bfa;stroke-width:5;stroke-linecap:round;stroke-dasharray:163;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke 0.3s;}
+.timer-arc.danger{stroke:#f87171;}
+.timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#a78bfa;transition:color 0.3s;}
+.timer-num.danger{color:#f87171;}
+.progress-bar{width:100%;height:6px;background:#1e1e3a;border-radius:4px;margin-bottom:16px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;transition:width 0.4s,background-color 0.5s;background:#4ade80;}
+.zone-badge{font-size:12px;font-weight:700;padding:5px 16px;border-radius:20px;margin-bottom:8px;letter-spacing:1px;}
+.zone-1{background:#1a3a1a;color:#4ade80;}
+.zone-2{background:#3a2a1a;color:#fb923c;}
+.zone-3{background:#3a1a1a;color:#f87171;}
+.lifeline-indicator{font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:16px;display:inline-block;}
+.lifeline-available{background:#1a2a3a;color:#60a5fa;border:1px solid #2a4a6a;}
+.lifeline-used-warning{background:#3a2a0d;color:#fb923c;border:1px solid #6a4a1a;}
+.lifeline-gone{background:#1e1e3a;color:#555;border:1px solid #2a2a4a;}
+.zone-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);background:rgba(13,13,31,0.97);border:2px solid #a78bfa;border-radius:20px;padding:32px 48px;text-align:center;z-index:500;opacity:0;pointer-events:none;transition:all 0.3s;backdrop-filter:blur(10px);}
+.zone-banner.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.zone-banner-icon{font-size:48px;margin-bottom:12px;}
+.zone-banner-title{font-size:24px;font-weight:800;color:#a78bfa;margin-bottom:8px;}
+.zone-banner-sub{font-size:14px;color:#888;}
+.streak-banner{position:fixed;top:80px;right:24px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:400;transform:translateX(200px);transition:transform 0.3s;pointer-events:none;}
+.streak-banner.show{transform:translateX(0);}
+.question-card{width:100%;animation:slideUp 0.35s ease-out;}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+.question-text{font-size:22px;font-weight:700;text-align:center;line-height:1.5;margin-bottom:32px;}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;}
+.option-btn{padding:18px 20px;background:#0d0d1f;border:1px solid #1e1e3a;border-radius:16px;color:white;font-size:15px;font-weight:500;cursor:pointer;text-align:left;transition:border-color 0.2s,background-color 0.2s,transform 0.2s;display:flex;align-items:center;gap:14px;}
+.option-btn:hover:not(:disabled){border-color:#a78bfa;background:#1a1a2e;transform:translateY(-2px);}
+.option-label{width:32px;height:32px;border-radius:8px;background:#1e1e3a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;transition:background-color 0.2s,color 0.2s;}
+.option-btn.correct{border-color:#4ade80;background:#0d2a1a;animation:flashGreen 0.4s ease-out;}
+.option-btn.correct .option-label{background:#4ade80;color:#0a0a14;}
+@keyframes flashGreen{0%{background:#4ade80;}100%{background:#0d2a1a;}}
+.option-btn.wrong{border-color:#f87171;background:#2a0d0d;animation:shakeRed 0.5s ease-out;}
+.option-btn.wrong .option-label{background:#f87171;color:#0a0a14;}
+@keyframes shakeRed{0%,100%{transform:translateX(0);}15%{transform:translateX(-8px);}30%{transform:translateX(8px);}45%{transform:translateX(-6px);}60%{transform:translateX(6px);}75%{transform:translateX(-3px);}90%{transform:translateX(3px);}}
+.option-btn.locked-in{border-color:#a78bfa;background:#1a1a2e;}
+.waiting-banner{margin-top:16px;font-size:13px;color:#a78bfa;font-weight:600;letter-spacing:1px;animation:blink 1s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.post-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 28px;}
+.post-stat{background:#0a0a14;border:1px solid #1e1e3a;border-radius:12px;padding:14px 8px;text-align:center;}
+.post-stat-val{font-size:18px;font-weight:800;color:#a78bfa;}
+.post-stat-lbl{font-size:11px;color:#555;margin-top:4px;}
+.rank-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:16px;}
+.rank-bronze{background:#2a1a0d;color:#cd7c54;border:1px solid #cd7c54;}
+.rank-silver{background:#1e1e2a;color:#9ca3af;border:1px solid #9ca3af;}
+.rank-gold{background:#2a2010;color:#fbbf24;border:1px solid #fbbf24;}
+.rank-platinum{background:#1a1a3a;color:#a78bfa;border:1px solid #a78bfa;}
+.eliminated-card{background:#0d0d1f;border:1px solid #2a0d0d;border-radius:24px;padding:48px 40px;text-align:center;width:100%;animation:slideUp 0.4s ease-out;}
+.eliminated-icon{font-size:64px;margin-bottom:16px;}
+.eliminated-card h2{font-size:32px;font-weight:800;color:#f87171;margin-bottom:8px;}
+.eliminated-card p{color:#666;font-size:14px;margin-bottom:24px;}
+.score-display{font-size:52px;font-weight:900;color:#a78bfa;margin-bottom:6px;}
+.score-label{font-size:14px;color:#666;margin-bottom:8px;}
+.win-card{background:#0d0d1f;border:1px solid #1a3a1a;border-radius:24px;padding:48px 40px;text-align:center;width:100%;animation:slideUp 0.4s ease-out;}
+.win-card h2{font-size:40px;font-weight:900;color:#4ade80;margin-bottom:8px;}
+.replay-btn{padding:14px 32px;font-size:15px;font-weight:700;background:#a78bfa;color:white;border:none;border-radius:12px;cursor:pointer;margin-top:8px;transition:all 0.2s;}
+.replay-btn:hover{background:#7c3aed;transform:translateY(-2px);}
+.home-btn{padding:14px 32px;font-size:15px;font-weight:600;background:transparent;color:#aaa;border:1px solid #2e2e5a;border-radius:12px;cursor:pointer;margin-top:8px;transition:all 0.2s;}
+.home-btn:hover{border-color:#a78bfa;color:white;}
+.btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
+.confetti-piece{position:fixed;border-radius:2px;animation:confettiFall linear forwards;pointer-events:none;z-index:9999;}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+</style>
 </head>
 <body>
-    <div class="auth-loading" id="auth-loading">
-        <div class="spinner"></div>
-        <p>Loading game...</p>
+
+<div class="auth-loading" id="auth-loading">
+    <div class="spinner"></div>
+    <p>Loading game...</p>
+</div>
+
+<div class="zone-banner" id="zone-banner-overlay">
+    <div class="zone-banner-icon" id="zb-icon">⚠️</div>
+    <div class="zone-banner-title" id="zb-title">Danger Zone!</div>
+    <div class="zone-banner-sub" id="zb-sub">One wrong answer eliminates you</div>
+</div>
+
+<div class="streak-banner" id="streak-banner">🔥 3 in a row!</div>
+
+<div class="page-content" id="page-content">
+
+<div class="top-bar">
+    <div class="logo" onclick="window.location.href='dashboard.html'">⚡ Incentive<span>Quiz</span></div>
+    <div class="player-info">
+        <div class="player-avatar" id="avatar">?</div>
+        <span id="display-name">Player</span>
     </div>
+</div>
 
-    <!-- ZONE TRANSITION BANNER -->
-    <div class="zone-banner" id="zone-banner-overlay">
-        <div class="zone-banner-icon" id="zb-icon">⚠️</div>
-        <div class="zone-banner-title" id="zb-title">Danger Zone</div>
-        <div class="zone-banner-sub" id="zb-sub">One wrong answer eliminates you</div>
-    </div>
+<div class="game-area">
 
-    <!-- STREAK BANNER -->
-    <div class="streak-banner" id="streak-banner">🔥 On Fire! 3 in a row!</div>
-
-    <div class="page-content" id="page-content">
-
-        <!-- TOP BAR -->
-        <div class="top-bar">
-            <div class="logo">⚡ Incentive<span>Quiz</span></div>
-            <div class="player-info">
-                <div class="player-avatar" id="avatar">?</div>
-                <span id="display-name">Player</span>
-            </div>
+<div class="screen active" id="screen-lobby">
+    <div class="lobby-card">
+        <h2>Choose Your Category</h2>
+        <p>Pick a topic you are confident in and start the match</p>
+        <div class="category-grid">
+            <button class="cat-btn selected" onclick="selectCat(this)">🇮🇳 Indian GK</button>
+            <button class="cat-btn" onclick="selectCat(this)">🌍 World GK</button>
+            <button class="cat-btn" onclick="selectCat(this)">🔬 Science</button>
+            <button class="cat-btn" onclick="selectCat(this)">🧮 Maths</button>
+            <button class="cat-btn" onclick="selectCat(this)">📰 Current Affairs</button>
+            <button class="cat-btn" onclick="selectCat(this)">🏏 Cricket</button>
+            <button class="cat-btn" onclick="selectCat(this)">🎵 Bollywood</button>
+            <button class="cat-btn" onclick="selectCat(this)">📖 History</button>
+            <button class="cat-btn" onclick="selectCat(this)">⚽ Sports</button>
+            <button class="cat-btn" onclick="selectCat(this)">🎭 OTT and Web Series</button>
         </div>
+        <button class="start-btn" onclick="startCountdown()">Find Match ⚡</button>
+    </div>
+</div>
 
-        <!-- GAME AREA -->
-        <div class="game-area">
+<div class="screen" id="screen-countdown">
+    <div class="countdown-number" id="countdown-num">3</div>
+    <div class="countdown-text">Get Ready...</div>
+</div>
 
-            <!-- LOBBY -->
-            <div class="screen active" id="screen-lobby">
-                <div class="lobby-card">
-                    <h2>Choose Your Category</h2>
-                    <p>Pick a topic you are confident in and start the match</p>
-                    <div class="category-grid">
-                        <button class="cat-btn selected" onclick="selectCat(this)">🇮🇳 Indian GK</button>
-                        <button class="cat-btn" onclick="selectCat(this)">🌍 World GK</button>
-                        <button class="cat-btn" onclick="selectCat(this)">🔬 Science</button>
-                        <button class="cat-btn" onclick="selectCat(this)">🧮 Maths</button>
-                        <button class="cat-btn" onclick="selectCat(this)">📰 Current Affairs</button>
-                        <button class="cat-btn" onclick="selectCat(this)">🏏 Cricket</button>
-                        <button class="cat-btn" onclick="selectCat(this)">🎵 Bollywood</button>
-                        <button class="cat-btn" onclick="selectCat(this)">📖 History</button>
-                        <button class="cat-btn" onclick="selectCat(this)">⚽ Sports</button>
-                        <button class="cat-btn" onclick="selectCat(this)">🎭 OTT and Web Series</button>
-                    </div>
-                    <button class="start-btn" onclick="startCountdown()">Find Match ⚡</button>
-                </div>
-            </div>
+<div class="screen" id="screen-quiz">
+    <div class="quiz-header">
+        <div class="question-count" id="q-count">Question 1</div>
+        <div class="timer-wrap">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+                <circle class="timer-bg" cx="32" cy="32" r="26"/>
+                <circle class="timer-arc" id="timer-arc" cx="32" cy="32" r="26"/>
+            </svg>
+            <div class="timer-num" id="timer-num">15</div>
+        </div>
+        <div class="players-alive">Players: <span id="alive-count">10</span></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="zone-badge zone-1" id="zone-badge">🟢 SAFETY ZONE</div>
+    <div class="lifeline-indicator lifeline-available" id="lifeline-indicator">🛡️ Lifeline available</div>
+    <div class="question-card" id="question-card">
+        <div class="question-text" id="question-text">Loading...</div>
+        <div class="options-grid">
+            <button class="option-btn" onclick="selectAnswer(0)"><div class="option-label">A</div><span id="opt-0">Option A</span></button>
+            <button class="option-btn" onclick="selectAnswer(1)"><div class="option-label">B</div><span id="opt-1">Option B</span></button>
+            <button class="option-btn" onclick="selectAnswer(2)"><div class="option-label">C</div><span id="opt-2">Option C</span></button>
+            <button class="option-btn" onclick="selectAnswer(3)"><div class="option-label">D</div><span id="opt-3">Option D</span></button>
+        </div>
+        <div class="waiting-banner" id="waiting-banner" style="display:none">⏳ Waiting for other players...</div>
+    </div>
+</div>
 
-            <!-- COUNTDOWN -->
-            <div class="screen" id="screen-countdown">
-                <div class="countdown-number" id="countdown-num">3</div>
-                <div class="countdown-text">Get Ready...</div>
-            </div>
-
-            <!-- QUIZ -->
-            <div class="screen" id="screen-quiz">
-                <div class="quiz-header">
-                    <div class="question-count" id="q-count">Question 1</div>
-                    <div class="timer-wrap">
-                        <svg width="64" height="64" viewBox="0 0 64 64">
-                            <circle class="timer-bg" cx="32" cy="32" r="26"/>
-                            <circle class="timer-arc" id="timer-arc" cx="32" cy="32" r="26"/>
-                        </svg>
-                        <div class="timer-num" id="timer-num">15</div>
-                    </div>
-                    <div class="players-alive">Players: <span id="alive-count">10</span></div>
-                </div>
-
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
-                </div>
-
-                <div class="zone-badge zone-1" id="zone-badge">🟢 SAFETY ZONE</div>
-                <div class="lifeline-indicator lifeline-available" id="lifeline-indicator">🛡️ Lifeline available</div>
-
-                <div class="question-card" id="question-card">
-                    <div class="question-text" id="question-text">Loading...</div>
-                    <div class="options-grid" id="options-grid">
-                        <button class="option-btn" onclick="selectAnswer(0)">
-                            <div class="option-label">A</div>
-                            <span id="opt-0">Option A</span>
-                        </button>
-                        <button class="option-btn" onclick="selectAnswer(1)">
-                            <div class="option-label">B</div>
-                            <span id="opt-1">Option B</span>
-                        </button>
-                        <button class="option-btn" onclick="selectAnswer(2)">
-                            <div class="option-label">C</div>
-                            <span id="opt-2">Option C</span>
-                        </button>
-                        <button class="option-btn" onclick="selectAnswer(3)">
-                            <div class="option-label">D</div>
-                            <span id="opt-3">Option D</span>
-                        </button>
-                    </div>
-                    <div class="waiting-banner" id="waiting-banner" style="display:none">
-                        ⏳ Waiting for other players...
-                    </div>
-                </div>
-            </div>
-
-            <!-- ELIMINATED -->
-            <div class="screen" id="screen-eliminated">
-                <div class="eliminated-card">
-                    <div class="eliminated-icon">💀</div>
-                    <h2>You Are Eliminated</h2>
-                    <p id="eliminated-msg">You answered incorrectly.</p>
-                    <div class="score-display" id="final-score">0</div>
-                    <div class="score-label">questions answered correctly</div>
-                    <div class="post-stats" id="post-stats-elim"></div>
-                    <div class="btn-row">
-                        <button class="replay-btn" onclick="rematchGame()">🔄 Rematch</button>
-                        <button class="home-btn" onclick="restartGame()">Choose Category</button>
-                        <button class="home-btn" onclick="window.location.href='dashboard.html'">Home</button>
-                    </div>
-                    
-                </div>
-            </div>
-
-            <!-- WIN -->
-            <div class="screen" id="screen-win">
-                <div class="win-card">
-                    <div style="font-size:72px;margin-bottom:16px">🏆</div>
-                    <h2>You Won!</h2>
-                    <div class="rank-badge" id="win-rank-badge"></div>
-                    <p style="color:#666;margin-bottom:12px;font-size:15px">You outlasted all other players.</p>
-                    <div class="score-display" id="win-score" style="color:#4ade80">0</div>
-                    <div class="score-label">questions answered correctly</div>
-                    <div class="post-stats" id="post-stats-win"></div>
-                    <div class="btn-row" style="margin-top:24px">
-                        <button class="replay-btn" onclick="rematchGame()">🔄 Rematch</button>
-                        <button class="home-btn" onclick="restartGame()">Choose Category</button>
-                        <button class="home-btn" onclick="window.location.href='dashboard.html'">Home</button>
-                    </div>
-                </div>
-            </div>
-
+<div class="screen" id="screen-eliminated">
+    <div class="eliminated-card">
+        <div class="eliminated-icon">💀</div>
+        <h2>You Are Eliminated</h2>
+        <p id="eliminated-msg">You answered incorrectly.</p>
+        <div class="score-display" id="final-score">0</div>
+        <div class="score-label">questions answered correctly</div>
+        <div class="post-stats" id="post-stats-elim"></div>
+        <div class="btn-row">
+            <button class="replay-btn" onclick="rematchGame()">🔄 Rematch</button>
+            <button class="home-btn" onclick="restartGame()">Choose Category</button>
+            <button class="home-btn" onclick="window.location.href='dashboard.html'">Home</button>
         </div>
     </div>
+</div>
 
-    <script>
-        auth.onAuthStateChanged(async user => {
-            if (!user) { window.location.href = 'login.html'; return; }
+<div class="screen" id="screen-win">
+    <div class="win-card">
+        <div style="font-size:72px;margin-bottom:12px">🏆</div>
+        <h2>You Won!</h2>
+        <div class="rank-badge" id="win-rank-badge"></div>
+        <p style="color:#666;margin-bottom:8px;font-size:14px">You outlasted all other players.</p>
+        <div class="score-display" id="win-score" style="color:#4ade80">0</div>
+        <div class="score-label">questions answered correctly</div>
+        <div class="post-stats" id="post-stats-win"></div>
+        <div class="btn-row" style="margin-top:16px">
+            <button class="replay-btn" onclick="rematchGame()">🔄 Rematch</button>
+            <button class="home-btn" onclick="restartGame()">Choose Category</button>
+            <button class="home-btn" onclick="window.location.href='dashboard.html'">Home</button>
+        </div>
+    </div>
+</div>
 
-            localStorage.setItem('iqUID', user.uid);
-            const doc = await db.collection('users').doc(user.uid).get();
-            if (doc.exists) {
-                localStorage.setItem('iqUsername', doc.data().username);
-                localStorage.setItem('iqBest', doc.data().best || 0);
-            }
+</div>
+</div>
 
-            const uname = localStorage.getItem('iqUsername') || 'Player';
-            document.getElementById('display-name').textContent = uname;
-            document.getElementById('avatar').textContent = uname[0].toUpperCase();
+<script>
+var easyQ=[], mediumQ=[], hardQ=[];
+var currentQ=0, score=0, streak=0, alive=10;
+var timerInt=null, timeLeft=15, maxTime=15;
+var answered=false, lifelineUsed=false, lifelineActive=false;
+var selectedCat='Indian GK', totalTime=0, qStart=null, prevZone=-1;
+var pChoice=undefined;
 
-            const loader = document.getElementById('auth-loading');
-            const content = document.getElementById('page-content');
-            if (loader) loader.style.display = 'none';
-            if (content) content.style.display = 'block';
+var ZONES=[
+    {name:'🟢 SAFETY ZONE', cls:'zone-1', from:0, to:2,  time:15, color:'#4ade80'},
+    {name:'🟡 DANGER ZONE', cls:'zone-2', from:3, to:7,  time:15, color:'#fb923c'},
+    {name:'🔴 HARD ZONE',   cls:'zone-3', from:8, to:12, time:12, color:'#f87171'},
+    {name:'💀 EXPERT ZONE', cls:'zone-3', from:13,to:16, time:10, color:'#f87171'},
+    {name:'⚡ SUDDEN DEATH',cls:'zone-3', from:17,to:999,time:10, color:'#a78bfa'},
+];
+
+var ZONE_BANNERS=[null,
+    {icon:'⚠️',title:'Danger Zone!',  sub:'One wrong answer eliminates you', color:'#fb923c'},
+    {icon:'🔴',title:'Hard Zone!',    sub:'Only the best survive here',       color:'#f87171'},
+    {icon:'💀',title:'Expert Zone!',  sub:'Legends only beyond this point',   color:'#f87171'},
+    {icon:'⚡',title:'Sudden Death!', sub:'Last one standing wins',           color:'#a78bfa'},
+];
+
+var CAT_MAP={
+    '🇮🇳 Indian GK':'Indian GK','🌍 World GK':'World GK',
+    '🔬 Science':'Science','🧮 Maths':'Maths',
+    '📰 Current Affairs':'Current Affairs','🏏 Cricket':'Cricket',
+    '🎵 Bollywood':'Bollywood','📖 History':'History',
+    '⚽ Sports':'Sports','🎭 OTT and Web Series':'OTT and Web Series'
+};
+
+var FALLBACK=[
+    {question:'What is the capital of India?',options:['Mumbai','Kolkata','New Delhi','Chennai'],answer:2,difficulty:'easy'},
+    {question:'Which planet is the Red Planet?',options:['Venus','Jupiter','Mars','Saturn'],answer:2,difficulty:'medium'},
+    {question:'Who gave the theory of relativity?',options:['Newton','Einstein','Hawking','Bohr'],answer:1,difficulty:'hard'},
+];
+
+auth.onAuthStateChanged(function(user) {
+    if (!user) { window.location.href='login.html'; return; }
+    localStorage.setItem('iqUID', user.uid);
+    db.collection('users').doc(user.uid).get().then(function(doc) {
+        if (doc.exists) {
+            var d=doc.data();
+            localStorage.setItem('iqUsername', d.username||'Player');
+            localStorage.setItem('iqBest', d.best||0);
+        }
+        var uname=localStorage.getItem('iqUsername')||'Player';
+        document.getElementById('display-name').textContent=uname;
+        document.getElementById('avatar').textContent=uname[0].toUpperCase();
+        document.getElementById('auth-loading').style.display='none';
+        document.getElementById('page-content').style.display='block';
+    }).catch(function() {
+        var uname=localStorage.getItem('iqUsername')||'Player';
+        document.getElementById('display-name').textContent=uname;
+        document.getElementById('avatar').textContent=uname[0].toUpperCase();
+        document.getElementById('auth-loading').style.display='none';
+        document.getElementById('page-content').style.display='block';
+    });
+});
+
+function shuffle(a){return a.slice().sort(function(){return Math.random()-0.5;});}
+
+function showScreen(id){
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+    document.getElementById(id).classList.add('active');
+}
+
+function getZone(){
+    for(var i=0;i<ZONES.length;i++){
+        if(currentQ>=ZONES[i].from && currentQ<=ZONES[i].to) return {zone:ZONES[i],idx:i};
+    }
+    return {zone:ZONES[ZONES.length-1],idx:ZONES.length-1};
+}
+
+function getQ(){
+    var pool;
+    if(currentQ<=2) pool=easyQ;
+    else if(currentQ<=7) pool=mediumQ;
+    else pool=hardQ;
+    if(!pool||pool.length===0) pool=easyQ.concat(mediumQ).concat(hardQ);
+    if(!pool||pool.length===0) pool=FALLBACK;
+    return pool[currentQ%pool.length];
+}
+
+function selectCat(btn){
+    document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('selected');});
+    btn.classList.add('selected');
+    selectedCat=CAT_MAP[btn.textContent.trim()]||btn.textContent.trim();
+}
+
+function startCountdown(){
+    showScreen('screen-countdown');
+    var c=3;
+    document.getElementById('countdown-num').textContent=c;
+    var iv=setInterval(function(){
+        c--;
+        if(c===0){clearInterval(iv);startGame();}
+        else document.getElementById('countdown-num').textContent=c;
+    },1000);
+}
+
+function startGame(){
+    currentQ=0;score=0;streak=0;alive=10;
+    lifelineUsed=false;lifelineActive=false;
+    prevZone=-1;totalTime=0;
+    showScreen('screen-quiz');
+    db.collection('questions').where('category','==',selectedCat).get()
+    .then(function(snap){
+        var all=snap.docs.map(function(d){return d.data();});
+        if(all.length===0) all=FALLBACK;
+        easyQ=shuffle(all.filter(function(q){return q.difficulty==='easy';}));
+        mediumQ=shuffle(all.filter(function(q){return q.difficulty==='medium';}));
+        hardQ=shuffle(all.filter(function(q){return q.difficulty==='hard';}));
+        loadQ();
+    }).catch(function(){
+        easyQ=shuffle(FALLBACK.filter(function(q){return q.difficulty==='easy';}));
+        mediumQ=shuffle(FALLBACK.filter(function(q){return q.difficulty==='medium';}));
+        hardQ=shuffle(FALLBACK.filter(function(q){return q.difficulty==='hard';}));
+        loadQ();
+    });
+}
+
+function showZoneBanner(idx){
+    var d=ZONE_BANNERS[idx];
+    if(!d) return;
+    var b=document.getElementById('zone-banner-overlay');
+    document.getElementById('zb-icon').textContent=d.icon;
+    document.getElementById('zb-title').textContent=d.title;
+    document.getElementById('zb-sub').textContent=d.sub;
+    b.style.borderColor=d.color;
+    b.classList.add('show');
+    setTimeout(function(){b.classList.remove('show');},2000);
+}
+
+function loadQ(){
+    answered=false;pChoice=undefined;qStart=Date.now();
+    var zr=getZone();var z=zr.zone;var zi=zr.idx;
+    maxTime=z.time;
+
+    if(zi!==prevZone && zi>0) showZoneBanner(zi);
+    prevZone=zi;
+
+    var badge=document.getElementById('zone-badge');
+    badge.textContent=z.name;badge.className='zone-badge '+z.cls;
+
+    var fill=document.getElementById('progress-fill');
+    fill.style.backgroundColor=z.color;
+    fill.style.width=(Math.min(currentQ/16,1)*100)+'%';
+
+    var lel=document.getElementById('lifeline-indicator');
+    if(currentQ<=2){
+        lel.style.display='inline-block';
+        if(!lifelineUsed){lel.textContent='🛡️ Lifeline available';lel.className='lifeline-indicator lifeline-available';}
+        else if(lifelineActive){lel.textContent='⚠️ Lifeline used — next wrong = eliminated';lel.className='lifeline-indicator lifeline-used-warning';}
+        else{lel.textContent='❌ No lifeline left';lel.className='lifeline-indicator lifeline-gone';}
+    } else {lel.style.display='none';}
+
+    var q=getQ();
+    document.getElementById('question-text').textContent=q.question||q.q||'Loading...';
+    q.options.forEach(function(o,i){document.getElementById('opt-'+i).textContent=o;});
+
+    var labs=['A','B','C','D'];
+    document.querySelectorAll('.option-btn').forEach(function(b,i){
+        b.classList.remove('correct','wrong','locked-in');
+        b.disabled=false;b.style.borderColor='';b.style.backgroundColor='';
+        b.querySelector('.option-label').textContent=labs[i];
+    });
+    document.getElementById('waiting-banner').style.display='none';
+
+    var card=document.getElementById('question-card');
+    card.style.animation='none';card.offsetHeight;
+    card.style.animation='slideUp 0.35s ease-out';
+
+    document.getElementById('q-count').textContent='Question '+(currentQ+1)+(currentQ>=17?' ⚡':'');
+    document.getElementById('alive-count').textContent=alive;
+    startTimer(z.time);
+}
+
+function startTimer(sec){
+    clearInterval(timerInt);
+    timeLeft=sec;maxTime=sec;
+    var num=document.getElementById('timer-num');
+    var arc=document.getElementById('timer-arc');
+    num.textContent=timeLeft;
+    num.classList.remove('danger');arc.classList.remove('danger');
+    arc.style.strokeDashoffset=0;
+    timerInt=setInterval(function(){
+        timeLeft--;
+        num.textContent=timeLeft;
+        arc.style.strokeDashoffset=163*(1-timeLeft/maxTime);
+        if(timeLeft<=5){num.classList.add('danger');arc.classList.add('danger');}
+        if(timeLeft<=0){clearInterval(timerInt);timeUp();}
+    },1000);
+}
+
+function timeUp(){
+    clearInterval(timerInt);
+    var q=getQ();var correct=q.answer;
+    var btns=document.querySelectorAll('.option-btn');
+    var wasAnswered=answered;var choice=pChoice;
+    btns.forEach(function(b){b.disabled=true;});
+    btns[correct].classList.add('correct');
+    if(wasAnswered && choice!==undefined && choice!==correct){
+        btns[choice].classList.remove('correct');btns[choice].classList.add('wrong');
+    }
+    answered=true;
+    if(currentQ>=3) killBots();
+    setTimeout(function(){
+        if(!wasAnswered){
+            if(currentQ<=2) safetyWrong();
+            else showElim('Time ran out! You did not answer.');
+            return;
+        }
+        if(choice===correct){
+            score++;streak++;lifelineActive=false;
+            totalTime+=(Date.now()-qStart)/1000;
+            showStreak();nextQ();
+        } else {
+            streak=0;
+            if(currentQ<=2) safetyWrong();
+            else showElim('Wrong answer!');
+        }
+    },1500);
+}
+
+function selectAnswer(idx){
+    if(answered) return;
+    answered=true;pChoice=idx;
+    var btns=document.querySelectorAll('.option-btn');
+    btns.forEach(function(b){b.disabled=true;});
+    btns[idx].classList.add('locked-in');
+    document.getElementById('waiting-banner').style.display='block';
+    document.getElementById('zone-badge').textContent='⏳ Waiting for timer...';
+}
+
+function safetyWrong(){
+    if(!lifelineUsed){lifelineUsed=true;lifelineActive=true;streak=0;nextQ();}
+    else showElim('You already used your lifeline. Eliminated!');
+}
+
+function showStreak(){
+    if(streak>0 && streak%3===0){
+        var b=document.getElementById('streak-banner');
+        b.textContent='🔥 '+streak+' in a row!';
+        b.classList.add('show');
+        setTimeout(function(){b.classList.remove('show');},2000);
+    }
+}
+
+function killBots(){
+    var drop=Math.floor(Math.random()*2)+1;
+    alive=Math.max(2,alive-drop);
+    document.getElementById('alive-count').textContent=alive;
+}
+
+function nextQ(){currentQ++;loadQ();}
+
+function showElim(msg){
+    clearInterval(timerInt);
+    saveResult(false);
+    document.getElementById('eliminated-msg').textContent=msg;
+    document.getElementById('final-score').textContent=score;
+    var avg=score>0?(totalTime/score).toFixed(1):0;
+    var best=parseInt(localStorage.getItem('iqBest')||'0');
+    var cmp=score>=best&&score>0?'🎉 New best score!':best>0?(best-score)+' behind your best':'Keep trying!';
+    var zn=getZone().zone.name.replace(/[^\w ]/g,'').trim().split(' ')[0];
+    document.getElementById('post-stats-elim').innerHTML=
+        '<div class="post-stat"><div class="post-stat-val">'+score+' / '+currentQ+'</div><div class="post-stat-lbl">Correct / Attempted</div></div>'+
+        '<div class="post-stat"><div class="post-stat-val">'+avg+'s</div><div class="post-stat-lbl">Avg Answer Time</div></div>'+
+        '<div class="post-stat"><div class="post-stat-val">'+zn+'</div><div class="post-stat-lbl">Zone Reached</div></div>'+
+        '<div class="post-stat" style="grid-column:1/-1"><div class="post-stat-val" style="font-size:14px">'+cmp+'</div><div class="post-stat-lbl">vs Your Best ('+best+')</div></div>';
+    showScreen('screen-eliminated');
+}
+
+function showWin(){
+    clearInterval(timerInt);
+    saveResult(true);
+    document.getElementById('win-score').textContent=score;
+    var rc='rank-bronze',rt='🥉 Bronze';
+    if(score>=20){rc='rank-platinum';rt='💎 Platinum';}
+    else if(score>=15){rc='rank-gold';rt='🥇 Gold';}
+    else if(score>=10){rc='rank-silver';rt='🥈 Silver';}
+    var rb=document.getElementById('win-rank-badge');
+    rb.textContent=rt;rb.className='rank-badge '+rc;
+    var avg=score>0?(totalTime/score).toFixed(1):0;
+    var best=parseInt(localStorage.getItem('iqBest')||'0');
+    var cmp=score>=best&&score>0?'🎉 New best score!':best>0?(best-score)+' behind your best':'';
+    document.getElementById('post-stats-win').innerHTML=
+        '<div class="post-stat"><div class="post-stat-val">'+score+' / '+currentQ+'</div><div class="post-stat-lbl">Correct / Attempted</div></div>'+
+        '<div class="post-stat"><div class="post-stat-val">'+avg+'s</div><div class="post-stat-lbl">Avg Answer Time</div></div>'+
+        '<div class="post-stat"><div class="post-stat-val">'+alive+'</div><div class="post-stat-lbl">Players Left</div></div>'+
+        '<div class="post-stat" style="grid-column:1/-1"><div class="post-stat-val" style="font-size:14px">'+cmp+'</div><div class="post-stat-lbl">vs Your Best ('+best+')</div></div>';
+    showScreen('screen-win');
+    launchConfetti();
+}
+
+function launchConfetti(){
+    var colors=['#a78bfa','#4ade80','#fb923c','#f87171','#fbbf24','#60a5fa'];
+    for(var i=0;i<80;i++){
+        (function(i){
+            setTimeout(function(){
+                var p=document.createElement('div');
+                p.className='confetti-piece';
+                p.style.cssText='left:'+Math.random()*100+'vw;top:-20px;width:'+(Math.random()*8+6)+'px;height:'+(Math.random()*8+6)+'px;background:'+colors[Math.floor(Math.random()*colors.length)]+';animation-duration:'+(Math.random()*2+2)+'s;';
+                document.body.appendChild(p);
+                setTimeout(function(){p.remove();},4000);
+            },i*40);
+        })(i);
+    }
+}
+
+function saveResult(won){
+    var uid=localStorage.getItem('iqUID');
+    if(!uid) return;
+    db.collection('users').doc(uid).get().then(function(doc){
+        if(!doc.exists) return;
+        var d=doc.data();
+        var ng=(d.games||0)+1;
+        var nw=won?(d.wins||0)+1:(d.wins||0);
+        var nb=Math.max(d.best||0,score);
+        var ns=won?(d.streak||0)+1:0;
+        var cs=d.categoryStats||{};
+        if(!cs[selectedCat]) cs[selectedCat]={games:0,totalScore:0,wins:0};
+        cs[selectedCat].games++;cs[selectedCat].totalScore+=score;
+        if(won) cs[selectedCat].wins++;
+        doc.ref.update({games:ng,wins:nw,best:nb,streak:ns,categoryStats:cs});
+        doc.ref.collection('history').add({
+            category:selectedCat,score:score,won:won,
+            eliminatedAt:currentQ+1,
+            date:new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}),
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
         });
-
-        // ── FALLBACK QUESTIONS ──
-        let questions = [
-            { question: "What is the capital of India?", options: ["Mumbai","Kolkata","New Delhi","Chennai"], answer: 2, difficulty: "easy" },
-            { question: "Which planet is the Red Planet?", options: ["Venus","Jupiter","Mars","Saturn"], answer: 2, difficulty: "medium" },
-            { question: "Who gave the theory of relativity?", options: ["Newton","Einstein","Hawking","Bohr"], answer: 1, difficulty: "hard" },
-        ];
-
-        let easyQuestions   = [];
-        let mediumQuestions = [];
-        let hardQuestions   = [];
-
-        // ── GAME STATE ──
-        let currentQ       = 0;
-        let score          = 0;
-        let correctStreak  = 0;
-        let playersAlive   = 10;
-        let timerInterval  = null;
-        let arcInterval    = null;
-        let timeLeft       = 15;
-        let maxTime        = 15;
-        let answered       = false;
-        let lifelineUsed   = false;
-        let lifelineActive = false;
-        let selectedCategory = 'Indian GK';
-        let gameStartTime  = null;
-        let questionStartTime = null;
-        let totalTimeTaken = 0;
-        let previousZone   = -1;
-
-        // ── ZONE CONFIG ──
-        const zones = [
-            { name: "🟢 SAFETY ZONE",  className: "zone-1", from: 0,  to: 2,  time: 15, color: "#4ade80" },
-            { name: "🟡 DANGER ZONE",  className: "zone-2", from: 3,  to: 7,  time: 15, color: "#fb923c" },
-            { name: "🔴 HARD ZONE",    className: "zone-3", from: 8,  to: 12, time: 12, color: "#f87171" },
-            { name: "💀 EXPERT ZONE",  className: "zone-3", from: 13, to: 16, time: 10, color: "#f87171" },
-            { name: "⚡ SUDDEN DEATH", className: "zone-3", from: 17, to: 999, time: 10, color: "#f87171" },
-        ];
-
-        const zoneBannerData = [
-            null,
-            { icon: "⚠️", title: "Danger Zone!", sub: "One wrong answer eliminates you", color: "#fb923c" },
-            { icon: "🔴", title: "Hard Zone!",   sub: "Only the best survive here",       color: "#f87171" },
-            { icon: "💀", title: "Expert Zone!", sub: "Legends only beyond this point",   color: "#f87171" },
-            { icon: "⚡", title: "Sudden Death!", sub: "Last one standing wins",          color: "#a78bfa" },
-        ];
-
-        // ── CATEGORY MAP ──
-        const categoryMap = {
-            '🇮🇳 Indian GK': 'Indian GK',
-            '🌍 World GK': 'World GK',
-            '🔬 Science': 'Science',
-            '🧮 Maths': 'Maths',
-            '📰 Current Affairs': 'Current Affairs',
-            '🏏 Cricket': 'Cricket',
-            '🎵 Bollywood': 'Bollywood',
-            '📖 History': 'History',
-            '⚽ Sports': 'Sports',
-            '🎭 OTT and Web Series': 'OTT and Web Series',
-        };
-
-        function selectCat(btn) {
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedCategory = categoryMap[btn.textContent.trim()] || btn.textContent.trim();
-        }
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        // ── COUNTDOWN ──
-        function startCountdown() {
-            showScreen('screen-countdown');
-            let count = 3;
-            document.getElementById('countdown-num').textContent = count;
-            const interval = setInterval(() => {
-                count--;
-                if (count === 0) { clearInterval(interval); startGame(); }
-                else document.getElementById('countdown-num').textContent = count;
-            }, 1000);
-        }
-
-        // ── SHUFFLE ──
-        function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
-
-        // ── START GAME ──
-        async function startGame() {
-            currentQ       = 0;
-            score          = 0;
-            correctStreak  = 0;
-            playersAlive   = 10;
-            lifelineUsed   = false;
-            lifelineActive = false;
-            previousZone   = -1;
-            totalTimeTaken = 0;
-            gameStartTime  = Date.now();
-            showScreen('screen-quiz');
-
-            try {
-                const snap = await db.collection('questions')
-                    .where('category', '==', selectedCategory).get();
-
-                if (!snap.empty) {
-                    const all = snap.docs.map(d => d.data());
-                    easyQuestions   = shuffle(all.filter(q => q.difficulty === 'easy'));
-                    mediumQuestions = shuffle(all.filter(q => q.difficulty === 'medium'));
-                    hardQuestions   = shuffle(all.filter(q => q.difficulty === 'hard'));
-                } else {
-                    easyQuestions   = shuffle(questions.filter(q => q.difficulty === 'easy'));
-                    mediumQuestions = shuffle(questions.filter(q => q.difficulty === 'medium'));
-                    hardQuestions   = shuffle(questions.filter(q => q.difficulty === 'hard'));
-                }
-            } catch(e) {
-                easyQuestions   = shuffle(questions.filter(q => q.difficulty === 'easy'));
-                mediumQuestions = shuffle(questions.filter(q => q.difficulty === 'medium'));
-                hardQuestions   = shuffle(questions.filter(q => q.difficulty === 'hard'));
-            }
-
-            loadQuestion();
-        }
-
-        // ── GET ZONE ──
-        function getZone() {
-            for (let z of zones) {
-                if (currentQ >= z.from && currentQ <= z.to) return z;
-            }
-            return zones[zones.length - 1];
-        }
-
-        // ── GET ZONE INDEX ──
-        function getZoneIndex() {
-            const zone = getZone();
-            return zones.indexOf(zone);
-        }
-
-        // ── GET QUESTION BY DIFFICULTY ──
-        function getQuestion() {
-            let pool;
-            if (currentQ <= 2)      pool = easyQuestions;
-            else if (currentQ <= 7) pool = mediumQuestions;
-            else                    pool = hardQuestions;
-
-            if (!pool || pool.length === 0) {
-                pool = [...easyQuestions, ...mediumQuestions, ...hardQuestions];
-            }
-            return pool[currentQ % pool.length];
-        }
-
-        // ── SHOW ZONE TRANSITION BANNER ──
-        function showZoneBanner(zoneIndex) {
-            const data = zoneBannerData[zoneIndex];
-            if (!data) return;
-
-            const banner = document.getElementById('zone-banner-overlay');
-            document.getElementById('zb-icon').textContent  = data.icon;
-            document.getElementById('zb-title').textContent = data.title;
-            document.getElementById('zb-sub').textContent   = data.sub;
-            banner.style.borderColor = data.color;
-
-            banner.classList.add('show');
-            setTimeout(() => banner.classList.remove('show'), 2000);
-        }
-
-        // ── LOAD QUESTION ──
-        function loadQuestion() {
-            answered = false;
-            window.playerChoice = undefined;
-            questionStartTime = Date.now();
-
-            const q    = getQuestion();
-            const zone = getZone();
-            const zoneIndex = getZoneIndex();
-            maxTime = zone.time;
-
-            // Zone transition banner
-            if (zoneIndex !== previousZone && zoneIndex > 0) {
-                showZoneBanner(zoneIndex);
-            }
-            previousZone = zoneIndex;
-
-            // Zone badge
-            const badge = document.getElementById('zone-badge');
-            badge.textContent  = zone.name;
-            badge.className    = 'zone-badge ' + zone.className;
-
-            // Progress bar color by zone
-            const fill = document.getElementById('progress-fill');
-            fill.style.backgroundColor = zone.color;
-            fill.style.width = (Math.min(currentQ / 16, 1) * 100) + '%';
-
-            // Lifeline indicator — separate from zone badge
-            const lifelineEl = document.getElementById('lifeline-indicator');
-            if (currentQ <= 2) {
-                lifelineEl.style.display = 'inline-block';
-                if (!lifelineUsed) {
-                    lifelineEl.textContent = '🛡️ Lifeline available';
-                    lifelineEl.className = 'lifeline-indicator lifeline-available';
-                } else if (lifelineActive) {
-                    lifelineEl.textContent = '⚠️ Lifeline used — next wrong = eliminated';
-                    lifelineEl.className = 'lifeline-indicator lifeline-used-warning';
-                } else {
-                    lifelineEl.textContent = '❌ No lifeline left';
-                    lifelineEl.className = 'lifeline-indicator lifeline-gone';
-                }
-            } else {
-                lifelineEl.style.display = 'none';
-            }
-
-            // Question text
-            document.getElementById('question-text').textContent = q.question || q.q || 'Question not found';
-
-            // Options
-            q.options.forEach((opt, i) => {
-                document.getElementById('opt-' + i).textContent = opt;
-            });
-
-            // Reset option styles
-            const labels = ['A','B','C','D'];
-            document.querySelectorAll('.option-btn').forEach((btn, i) => {
-                btn.classList.remove('correct','wrong','locked-in');
-                btn.disabled = false;
-                btn.style.borderColor = '';
-                btn.style.backgroundColor = '';
-                btn.querySelector('.option-label').textContent = labels[i];
-            });
-
-            // Hide waiting banner
-            document.getElementById('waiting-banner').style.display = 'none';
-
-            // Animate question card
-            const card = document.getElementById('question-card');
-            card.style.animation = 'none';
-            card.offsetHeight; // trigger reflow
-            card.style.animation = 'slideUp 0.35s ease-out';
-
-            // Header
-            document.getElementById('q-count').textContent =
-                'Question ' + (currentQ + 1) + (currentQ >= 17 ? ' ⚡' : '');
-            document.getElementById('alive-count').textContent = playersAlive;
-
-            startTimer(zone.time);
-        }
-
-        // ── CIRCULAR TIMER ── 
-        function startTimer(seconds) {
-            clearInterval(timerInterval);
-            clearInterval(arcInterval);
-
-            timeLeft = seconds;
-            maxTime  = seconds;
-
-            const numEl = document.getElementById('timer-num');
-            const arcEl = document.getElementById('timer-arc');
-            const circumference = 163;
-
-            numEl.textContent = timeLeft;
-            numEl.classList.remove('danger');
-            arcEl.classList.remove('danger');
-            arcEl.style.strokeDashoffset = 0;
-
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                numEl.textContent = timeLeft;
-
-                // Update arc
-                const progress = timeLeft / maxTime;
-                arcEl.style.strokeDashoffset = circumference * (1 - progress);
-
-                if (timeLeft <= 5) {
-                    numEl.classList.add('danger');
-                    arcEl.classList.add('danger');
-                }
-
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    timeUp();
-                }
-            }, 1000);
-        }
-
-        // ── TIME UP ──
-        function timeUp() {
-            clearInterval(timerInterval);
-
-            const correct = getQuestion().answer;
-            const buttons = document.querySelectorAll('.option-btn');
-            const playerAnswered = answered;
-            const choice = window.playerChoice;
-
-            buttons.forEach(b => b.disabled = true);
-            buttons[correct].classList.add('correct');
-
-            if (playerAnswered && choice !== undefined && choice !== correct) {
-                buttons[choice].classList.remove('correct');
-                buttons[choice].classList.add('wrong');
-            }
-
-            answered = true;
-            if (currentQ >= 3) eliminateBots();
-
-            setTimeout(() => {
-                if (!playerAnswered) {
-                    if (currentQ <= 2) handleSafetyZoneWrong();
-                    else showEliminated('Time ran out! You did not answer.');
-                    return;
-                }
-
-                if (choice === correct) {
-                    score++;
-                    correctStreak++;
-                    lifelineActive = false;
-                    totalTimeTaken += (Date.now() - questionStartTime) / 1000;
-                    showStreakIfNeeded();
-                    nextQuestion();
-                } else {
-                    correctStreak = 0;
-                    if (currentQ <= 2) handleSafetyZoneWrong();
-                    else showEliminated('Wrong answer!');
-                }
-            }, 1500);
-        }
-
-        // ── SELECT ANSWER ──
-        function selectAnswer(index) {
-            if (answered) return;
-            answered = true;
-
-            const buttons = document.querySelectorAll('.option-btn');
-            buttons.forEach(b => b.disabled = true);
-            buttons[index].classList.add('locked-in');
-
-            document.getElementById('waiting-banner').style.display = 'block';
-            document.getElementById('zone-badge').textContent = '⏳ Waiting for timer...';
-
-            window.playerChoice = index;
-        }
-
-        // ── SAFETY ZONE WRONG ──
-        function handleSafetyZoneWrong() {
-            if (!lifelineUsed) {
-                lifelineUsed   = true;
-                lifelineActive = true;
-                correctStreak  = 0;
-                nextQuestion();
-            } else {
-                showEliminated('You already used your lifeline. Eliminated!');
-            }
-        }
-
-        // ── STREAK ──
-        function showStreakIfNeeded() {
-            if (correctStreak > 0 && correctStreak % 3 === 0) {
-                const banner = document.getElementById('streak-banner');
-                banner.textContent = '🔥 ' + correctStreak + ' in a row!';
-                banner.classList.add('show');
-                setTimeout(() => banner.classList.remove('show'), 2000);
-            }
-        }
-
-        // ── ELIMINATE BOTS ──
-        function eliminateBots() {
-            const drop = Math.floor(Math.random() * 2) + 1;
-            playersAlive = Math.max(2, playersAlive - drop);
-            document.getElementById('alive-count').textContent = playersAlive;
-        }
-
-        // ── NEXT QUESTION ──
-        // WIN CONDITION: only when all questions in all zones answered OR sudden death reached with 1 player
-        function nextQuestion() {
-            currentQ++;
-
-            // Check if all planned questions done (Q17 = index 17, all 5 zones completed)
-            // Sudden death is unlimited — game only ends when player gets eliminated
-            // There is no automatic win — player must survive all questions
-            loadQuestion();
-        }
-
-        // ── ELIMINATED ──
-        function showEliminated(msg) {
-            clearInterval(timerInterval);
-            saveGameResult(false);
-
-            document.getElementById('eliminated-msg').textContent = msg;
-            document.getElementById('final-score').textContent = score;
-
-            const avgTime = score > 0 ? (totalTimeTaken / score).toFixed(1) : 0;
-            const best = parseInt(localStorage.getItem('iqBest') || '0');
-            const comparison = score >= best
-                ? '🎉 New best score!'
-                : score > 0 ? (best - score) + ' behind your best'
-                : 'Keep trying!';
-
-            document.getElementById('post-stats-elim').innerHTML = `
-                <div class="post-stat">
-                    <div class="post-stat-val">${score} / ${currentQ}</div>
-                    <div class="post-stat-lbl">Correct / Attempted</div>
-                </div>
-                <div class="post-stat">
-                    <div class="post-stat-val">${avgTime}s</div>
-                    <div class="post-stat-lbl">Avg Answer Time</div>
-                </div>
-                <div class="post-stat">
-                    <div class="post-stat-val">${getZone().name.replace(/[^a-zA-Z ]/g,'').trim()}</div>
-                    <div class="post-stat-lbl">Zone Reached</div>
-                </div>
-                <div class="post-stat" style="grid-column:1/-1">
-                    <div class="post-stat-val" style="font-size:15px">${comparison}</div>
-                    <div class="post-stat-lbl">vs Your Best (${best})</div>
-                </div>
-            `;
-
-            showScreen('screen-eliminated');
-        }
-
-        // ── WIN ──
-        function showWin() {
-            clearInterval(timerInterval);
-            saveGameResult(true);
-
-            document.getElementById('win-score').textContent = score;
-
-            let rankClass = 'rank-bronze', rankText = '🥉 Bronze';
-            if (score >= 20)      { rankClass = 'rank-platinum'; rankText = '💎 Platinum'; }
-            else if (score >= 15) { rankClass = 'rank-gold';     rankText = '🥇 Gold'; }
-            else if (score >= 10) { rankClass = 'rank-silver';   rankText = '🥈 Silver'; }
-            const rb = document.getElementById('win-rank-badge');
-            rb.textContent = rankText;
-            rb.className   = 'rank-badge ' + rankClass;
-
-            const avgTime = score > 0 ? (totalTimeTaken / score).toFixed(1) : 0;
-            const best = parseInt(localStorage.getItem('iqBest') || '0');
-            const comparison = score >= best ? '🎉 New best score!' : (best - score) + ' behind your best';
-
-            document.getElementById('post-stats-win').innerHTML = `
-                <div class="post-stat">
-                    <div class="post-stat-val">${score} / ${currentQ}</div>
-                    <div class="post-stat-lbl">Correct / Attempted</div>
-                </div>
-                <div class="post-stat">
-                    <div class="post-stat-val">${avgTime}s</div>
-                    <div class="post-stat-lbl">Avg Answer Time</div>
-                </div>
-                <div class="post-stat">
-                    <div class="post-stat-val">${playersAlive}</div>
-                    <div class="post-stat-lbl">Players Left</div>
-                </div>
-                <div class="post-stat" style="grid-column:1/-1">
-                    <div class="post-stat-val" style="font-size:15px">${comparison}</div>
-                    <div class="post-stat-lbl">vs Your Best (${best})</div>
-                </div>
-            `;
-
-            showScreen('screen-win');
-            launchConfetti();
-        }
-
-        // ── CONFETTI ──
-        function launchConfetti() {
-            const colors = ['#a78bfa','#4ade80','#fb923c','#f87171','#fbbf24','#60a5fa'];
-            for (let i = 0; i < 80; i++) {
-                setTimeout(() => {
-                    const piece = document.createElement('div');
-                    piece.className = 'confetti-piece';
-                    piece.style.left = Math.random() * 100 + 'vw';
-                    piece.style.top = '-20px';
-                    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    piece.style.width  = (Math.random() * 8 + 6) + 'px';
-                    piece.style.height = (Math.random() * 8 + 6) + 'px';
-                    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
-                    piece.style.animationDelay = '0s';
-                    document.body.appendChild(piece);
-                    setTimeout(() => piece.remove(), 4000);
-                }, i * 40);
-            }
-        }
-
-        // ── SAVE RESULT ──
-        async function saveGameResult(won) {
-            const uid = localStorage.getItem('iqUID');
-            if (!uid) return;
-
-            try {
-                const userRef = db.collection('users').doc(uid);
-                const doc = await userRef.get();
-                if (!doc.exists) return;
-
-                const data = doc.data();
-                const newGames  = (data.games  || 0) + 1;
-                const newWins   = won ? (data.wins || 0) + 1 : (data.wins || 0);
-                const newBest   = Math.max(data.best || 0, score);
-                const newStreak = won ? (data.streak || 0) + 1 : 0;
-
-                // Category performance tracking
-                const catStats = data.categoryStats || {};
-                const cat = selectedCategory;
-                if (!catStats[cat]) catStats[cat] = { games: 0, totalScore: 0, wins: 0 };
-                catStats[cat].games++;
-                catStats[cat].totalScore += score;
-                if (won) catStats[cat].wins++;
-
-                await userRef.update({
-                    games:  newGames,
-                    wins:   newWins,
-                    best:   newBest,
-                    streak: newStreak,
-                    categoryStats: catStats
-                });
-
-                await userRef.collection('history').add({
-                    category:    selectedCategory,
-                    score:       score,
-                    won:         won,
-                    eliminatedAt: currentQ + 1,
-                    date: new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                console.log('Game saved successfully');
-            } catch(e) {
-                console.log('Could not save result:', e);
-            }
-        }
-        function rematchGame() {
-            // Restart with same category — skip lobby
-            currentQ       = 0;
-            score          = 0;
-            correctStreak  = 0;
-            playersAlive   = 10;
-            lifelineUsed   = false;
-            lifelineActive = false;
-            previousZone   = -1;
-            totalTimeTaken = 0;
-            gameStartTime  = Date.now();
-            startCountdown();
-        }
-
-        function restartGame() {
-            showScreen('screen-lobby');
-        }
-
-
-    </script>
+        if(nb>parseInt(localStorage.getItem('iqBest')||'0')) localStorage.setItem('iqBest',nb);
+        console.log('Saved');
+    }).catch(function(e){console.log('Save error:',e.message);});
+}
+
+function rematchGame(){
+    currentQ=0;score=0;streak=0;alive=10;
+    lifelineUsed=false;lifelineActive=false;
+    prevZone=-1;totalTime=0;
+    startCountdown();
+}
+
+function restartGame(){clearInterval(timerInt);showScreen('screen-lobby');}
+</script>
 </body>
 </html>
