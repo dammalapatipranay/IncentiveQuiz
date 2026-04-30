@@ -1,4 +1,3 @@
-// ── FIREBASE CONFIG ──
 const firebaseConfig = {
     apiKey: "AIzaSyBr_6qG54RZ8Pi-6-MN0ishMnbJlofBgxE",
     authDomain: "incentivequiz.firebaseapp.com",
