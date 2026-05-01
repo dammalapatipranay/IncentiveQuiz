@@ -595,178 +595,134 @@
 
     <script>
 
-        let currentUID = null;
+        var currentUID = null;
+        var currentLbTab = 'all';
 
-        auth.onAuthStateChanged(async user => {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            // Force fresh read — disable cache
-            db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
+        auth.onAuthStateChanged(function(user) {
+            if (!user) { window.location.href = 'login.html'; return; }
+
             currentUID = user.uid;
             localStorage.setItem('iqUID', user.uid);
 
-            // Hide loader show content
-            const loader = document.getElementById('auth-loading');
-            const content = document.getElementById('page-content');
+            var loader = document.getElementById('auth-loading');
+            var content = document.getElementById('page-content');
             if (loader) loader.style.display = 'none';
             if (content) content.style.display = 'block';
-            renderNavbar('dashboard');
 
-            try {
-                // Load user data from Firestore
-                const doc = await db.collection('users').doc(user.uid).get();
-
+            db.collection('users').doc(user.uid).get().then(function(doc) {
                 if (!doc.exists) {
-                    // Auto create document if missing
-                    await db.collection('users').doc(user.uid).set({
+                    return db.collection('users').doc(user.uid).set({
                         username: user.email.split('@')[0],
                         email: user.email,
-                        games: 0,
-                        wins: 0,
-                        best: 0,
-                        streak: 0,
+                        games: 0, wins: 0, best: 0, streak: 0,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    window.location.reload();
-                    return;
+                    }).then(function() { window.location.reload(); });
                 }
 
-                const data = doc.data();
-                const username = data.username || 'Player';
+                var data = doc.data();
+                var username = data.username || 'Player';
                 localStorage.setItem('iqUsername', username);
 
-                // Update UI
                 document.getElementById('nav-avatar').textContent = username[0].toUpperCase();
                 document.getElementById('welcome-name').textContent = username;
 
-                // Greeting
-                const hour = new Date().getHours();
-                let greeting = 'Ready to climb the leaderboard?';
+                var hour = new Date().getHours();
+                var greeting = 'Ready to climb the leaderboard?';
                 if (hour < 12) greeting = 'Good morning! Start your day with a win.';
                 else if (hour < 17) greeting = 'Good afternoon! Ready to dominate?';
                 else greeting = 'Good evening! One more game before bed?';
                 document.getElementById('welcome-sub').textContent = greeting;
 
-                // Stats
-                document.getElementById('s-games').textContent = data.games || 0;
-                document.getElementById('s-wins').textContent = data.wins || 0;
-                document.getElementById('s-best').textContent = data.best || 0;
+                document.getElementById('s-games').textContent  = data.games  || 0;
+                document.getElementById('s-wins').textContent   = data.wins   || 0;
+                document.getElementById('s-best').textContent   = data.best   || 0;
                 document.getElementById('s-streak').textContent = data.streak || 0;
 
-            } catch(e) {
+                loadHistory(user.uid);
+                loadLeaderboard();
+            }).catch(function(e) {
                 console.log('Error loading user data:', e);
                 document.getElementById('welcome-name').textContent = 'Player';
                 document.getElementById('welcome-sub').textContent = 'Ready to play?';
-                document.getElementById('s-games').textContent = 0;
-                document.getElementById('s-wins').textContent = 0;
-                document.getElementById('s-best').textContent = 0;
-                document.getElementById('s-streak').textContent = 0;
-            }
-
-            // Load history and leaderboard separately so one failing does not block the other
-            loadHistory(user.uid);
-            loadLeaderboard();
+                ['s-games','s-wins','s-best','s-streak'].forEach(function(id) {
+                    document.getElementById(id).textContent = 0;
+                });
+                loadHistory(user.uid);
+                loadLeaderboard();
+            });
         });
-
-        let currentLbTab = 'all';
 
         function switchLbTab(tab) {
             currentLbTab = tab;
             document.getElementById('lb-tab-all').classList.toggle('active', tab === 'all');
             document.getElementById('lb-tab-friends').classList.toggle('active', tab === 'friends');
-            if (tab === 'all') {
-                loadLeaderboard();
-            } else {
-                loadFriendsLeaderboard();
-            }
+            if (tab === 'all') loadLeaderboard();
+            else loadFriendsLeaderboard();
         }
 
-        async function loadLeaderboard() {
-            const el = document.getElementById('lb-list');
-            const username = localStorage.getItem('iqUsername');
-            try {
-                const snap = await db.collection('users')
-                    .orderBy('best', 'desc')
-                    .limit(5)
-                    .get();
-
-                if (snap.empty) {
-                    el.innerHTML = '<div class="no-data">No players yet.</div>';
-                    return;
-                }
-
-                const medals = ['🥇', '🥈', '🥉'];
-                el.innerHTML = snap.docs.map((d, i) => {
-                    const u = d.data();
-                    const isYou = u.username === username;
-                    return `
-                        <div class="lb-row">
-                            <div class="lb-rank">${medals[i] || '#' + (i + 1)}</div>
-                            <div class="lb-avatar">${(u.username || 'P')[0].toUpperCase()}</div>
-                            <div class="lb-name ${isYou ? 'lb-you' : ''}">
-                                ${u.username || 'Player'} ${isYou ? '(You)' : ''}
-                            </div>
-                            <div class="lb-score">${u.best || 0}</div>
-                        </div>
-                    `;
-                }).join('');
-
-            } catch(e) {
-                el.innerHTML = '<div class="no-data">Could not load.</div>';
-            }
+        function loadLeaderboard() {
+            var el = document.getElementById('lb-list');
+            var username = localStorage.getItem('iqUsername');
+            var medals = ['🥇', '🥈', '🥉'];
+            db.collection('users').orderBy('best', 'desc').limit(5).get()
+                .then(function(snap) {
+                    if (snap.empty) { el.innerHTML = '<div class="no-data">No players yet.</div>'; return; }
+                    el.innerHTML = snap.docs.map(function(d, i) {
+                        var u = d.data();
+                        var isYou = u.username === username;
+                        return '<div class="lb-row">' +
+                            '<div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>' +
+                            '<div class="lb-avatar">' + (u.username||'P')[0].toUpperCase() + '</div>' +
+                            '<div class="lb-name ' + (isYou ? 'lb-you' : '') + '">' +
+                                (u.username||'Player') + (isYou ? ' (You)' : '') +
+                            '</div>' +
+                            '<div class="lb-score">' + (u.best||0) + '</div>' +
+                        '</div>';
+                    }).join('');
+                })
+                .catch(function() { el.innerHTML = '<div class="no-data">Could not load.</div>'; });
         }
 
-        async function loadFriendsLeaderboard() {
-            const el = document.getElementById('lb-list');
-            const uid = localStorage.getItem('iqUID');
-            const username = localStorage.getItem('iqUsername');
+        function loadFriendsLeaderboard() {
+            var el = document.getElementById('lb-list');
+            var uid = localStorage.getItem('iqUID');
+            var username = localStorage.getItem('iqUsername');
+            var medals = ['🥇', '🥈', '🥉'];
+            el.innerHTML = '<div class="loading">Loading friends...</div>';
 
-            try {
-                el.innerHTML = '<div class="loading">Loading friends...</div>';
+            db.collection('users').doc(uid).collection('friends').get()
+                .then(function(friendsSnap) {
+                    if (friendsSnap.empty) {
+                        el.innerHTML = '<div class="no-data">No friends yet. Add friends from the leaderboard!</div>';
+                        return;
+                    }
+                    var friendUIDs = friendsSnap.docs.map(function(d) { return d.id; });
+                    friendUIDs.push(uid);
+                    return Promise.all(friendUIDs.map(function(fUID) {
+                        return db.collection('users').doc(fUID).get();
+                    })).then(function(docs) {
+                        var friendData = docs.filter(function(d) { return d.exists; })
+                            .map(function(d) { return Object.assign({ uid: d.id }, d.data()); })
+                            .sort(function(a, b) { return (b.best||0) - (a.best||0); });
 
-                const friendsSnap = await db.collection('users').doc(uid)
-                    .collection('friends').get();
-
-                if (friendsSnap.empty) {
-                    el.innerHTML = '<div class="no-data">No friends yet. Add friends from the leaderboard!</div>';
-                    return;
-                }
-
-                const friendUIDs = friendsSnap.docs.map(d => d.id);
-                friendUIDs.push(uid);
-
-                const friendData = [];
-                for (const fUID of friendUIDs) {
-                    const doc = await db.collection('users').doc(fUID).get();
-                    if (doc.exists) friendData.push({ uid: doc.id, ...doc.data() });
-                }
-
-                friendData.sort((a, b) => (b.best || 0) - (a.best || 0));
-
-                const medals = ['🥇', '🥈', '🥉'];
-                el.innerHTML = friendData.slice(0, 5).map((u, i) => {
-                    const isYou = u.username === username;
-                    return `
-                        <div class="lb-row">
-                            <div class="lb-rank">${medals[i] || '#' + (i + 1)}</div>
-                            <div class="lb-avatar">${(u.username || 'P')[0].toUpperCase()}</div>
-                            <div class="lb-name ${isYou ? 'lb-you' : ''}">
-                                ${u.username || 'Player'} ${isYou ? '(You)' : ''}
-                            </div>
-                            <div class="lb-score">${u.best || 0}</div>
-                        </div>
-                    `;
-                }).join('');
-
-            } catch(e) {
-                el.innerHTML = '<div class="no-data">Could not load friends.</div>';
-            }
+                        el.innerHTML = friendData.slice(0, 5).map(function(u, i) {
+                            var isYou = u.username === username;
+                            return '<div class="lb-row">' +
+                                '<div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>' +
+                                '<div class="lb-avatar">' + (u.username||'P')[0].toUpperCase() + '</div>' +
+                                '<div class="lb-name ' + (isYou ? 'lb-you' : '') + '">' +
+                                    (u.username||'Player') + (isYou ? ' (You)' : '') +
+                                '</div>' +
+                                '<div class="lb-score">' + (u.best||0) + '</div>' +
+                            '</div>';
+                        }).join('');
+                    });
+                })
+                .catch(function() { el.innerHTML = '<div class="no-data">Could not load friends.</div>'; });
         }
 
         function logout() {
-            auth.signOut().then(() => {
+            auth.signOut().then(function() {
                 localStorage.clear();
                 window.location.href = 'index.html';
             });
