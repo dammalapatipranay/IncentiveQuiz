@@ -1,4 +1,4 @@
-const firebaseConfig = {
+var firebaseConfig = {
     apiKey: "AIzaSyBr_6qG54RZ8Pi-6-MN0ishMnbJlofBgxE",
     authDomain: "incentivequiz.firebaseapp.com",
     projectId: "incentivequiz",
@@ -9,5 +9,5 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+var auth = firebase.auth();
+var db = firebase.firestore();
