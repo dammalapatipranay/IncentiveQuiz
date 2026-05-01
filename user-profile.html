@@ -231,6 +231,44 @@
         .not-found div { font-size:64px; margin-bottom:20px; }
         .not-found h2 { font-size:28px; color:#f87171; margin-bottom:12px; }
         .not-found p { color:#555; font-size:15px; margin-bottom:32px; }
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 600px) {
+            nav { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+            .logo { font-size: 17px; }
+            .nav-links { gap: 4px; flex-wrap: wrap; }
+            .nav-links a { font-size: 12px; padding: 6px 8px; }
+            .nav-play { padding: 6px 12px !important; }
+            .nav-logout-btn { font-size: 11px; padding: 5px 8px; }
+
+            .main { padding: 80px 14px 24px; }
+
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 24px 18px;
+                gap: 16px;
+            }
+            .big-avatar { width: 68px; height: 68px; font-size: 26px; }
+            .profile-info h1 { font-size: 20px; }
+            .profile-info p  { font-size: 13px; }
+            .profile-actions { margin-left: 0; flex-direction: row; flex-wrap: wrap; gap: 8px; width: 100%; }
+            .btn-primary, .btn-secondary, .btn-danger, .btn-pending {
+                flex: 1; padding: 10px 12px; font-size: 13px; text-align: center;
+            }
+
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card  { padding: 16px 10px; }
+            .stat-icon  { font-size: 20px; }
+            .stat-value { font-size: 22px; }
+            .stat-label { font-size: 11px; }
+
+            .panel { padding: 18px 14px; }
+            .achievements-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .achievement { padding: 14px 8px; }
+            .ach-icon { font-size: 22px; }
+            .ach-name { font-size: 11px; }
+            .ach-desc { font-size: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -248,12 +286,13 @@
 
     <div class="page-content" id="page-content">
         <nav>
-            <div class="logo">⚡ Incentive<span>Quiz</span></div>
+            <div class="logo" onclick="window.location.href='dashboard.html'" style="cursor:pointer">⚡ Incentive<span>Quiz</span></div>
             <div class="nav-links">
                 <a href="dashboard.html">Dashboard</a>
                 <a href="leaderboard.html">Leaderboard</a>
                 <a href="profile.html">My Profile</a>
                 <a href="game.html" class="nav-play">⚡ Play</a>
+                <button onclick="logoutUser()" class="nav-logout-btn">Logout</button>
             </div>
         </nav>
 
@@ -310,238 +349,155 @@
     </div>
 
     <script>
-        // Get the UID from URL — ?uid=xxxxx
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetUID = urlParams.get('uid');
+        var urlParams = new URLSearchParams(window.location.search);
+        var targetUID = urlParams.get('uid');
+        var currentUserUID = null;
 
-        let currentUserUID = null;
-
-        auth.onAuthStateChanged(async user => {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-
+        auth.onAuthStateChanged(function(user) {
+            if (!user) { window.location.href = 'login.html'; return; }
             currentUserUID = user.uid;
             localStorage.setItem('iqUID', user.uid);
-
-            const loader = document.getElementById('auth-loading');
-            const content = document.getElementById('page-content');
+            var loader = document.getElementById('auth-loading');
+            var content = document.getElementById('page-content');
             if (loader) loader.style.display = 'none';
             if (content) content.style.display = 'block';
-            renderNavbar('user-profile');
 
-            if (!targetUID) {
-                showNotFound();
-                return;
-            }
-
-            // If viewing own profile redirect to profile.html
-            if (targetUID === user.uid) {
-                window.location.href = 'profile.html';
-                return;
-            }
-
-            await loadTargetProfile(targetUID, user.uid);
+            if (!targetUID) { showNotFound(); return; }
+            if (targetUID === user.uid) { window.location.href = 'profile.html'; return; }
+            loadTargetProfile(targetUID, user.uid);
         });
 
-        async function loadTargetProfile(targetUID, viewerUID) {
-            try {
-                const doc = await db.collection('users').doc(targetUID).get();
-                if (!doc.exists) { showNotFound(); return; }
-
-                const data = doc.data();
-                const username = data.username || 'Player';
-
-                // Profile header
-                document.getElementById('big-avatar').textContent = username[0].toUpperCase();
-                document.getElementById('profile-name').textContent = username;
-
-                const joined = data.createdAt
-                    ? data.createdAt.toDate().toLocaleDateString('en-IN', { month:'long', year:'numeric' })
-                    : 'Recently';
-                document.getElementById('profile-joined').textContent = 'Playing since ' + joined;
-
-                // Stats
-                const games  = data.games  || 0;
-                const wins   = data.wins   || 0;
-                const best   = data.best   || 0;
-                const streak = data.streak || 0;
-
-                document.getElementById('s-games').textContent  = games;
-                document.getElementById('s-wins').textContent   = wins;
-                document.getElementById('s-best').textContent   = best;
-                document.getElementById('s-streak').textContent = streak;
-
-                // Achievements
-                renderAchievements(games, wins, best, streak);
-
-                // Badges
-                renderBadges(games, wins, best, streak);
-
-                // Friend button
-                await renderFriendButton(targetUID, viewerUID);
-
-            } catch(e) {
-                console.log('Error:', e);
-                showNotFound();
-            }
+        function loadTargetProfile(tUID, viewerUID) {
+            db.collection('users').doc(tUID).get()
+                .then(function(doc) {
+                    if (!doc.exists) { showNotFound(); return; }
+                    var data = doc.data();
+                    var username = data.username || 'Player';
+                    document.getElementById('big-avatar').textContent = username[0].toUpperCase();
+                    document.getElementById('profile-name').textContent = username;
+                    var joined = data.createdAt
+                        ? data.createdAt.toDate().toLocaleDateString('en-IN', { month:'long', year:'numeric' })
+                        : 'Recently';
+                    document.getElementById('profile-joined').textContent = 'Playing since ' + joined;
+                    var games = data.games || 0, wins = data.wins || 0,
+                        best = data.best || 0, streak = data.streak || 0;
+                    document.getElementById('s-games').textContent  = games;
+                    document.getElementById('s-wins').textContent   = wins;
+                    document.getElementById('s-best').textContent   = best;
+                    document.getElementById('s-streak').textContent = streak;
+                    renderAchievements(games, wins, best, streak);
+                    renderBadges(games, wins, best, streak);
+                    renderFriendButton(tUID, viewerUID);
+                })
+                .catch(function() { showNotFound(); });
         }
 
-        async function renderFriendButton(targetUID, viewerUID) {
-            const actionsEl = document.getElementById('profile-actions');
-
+        function renderFriendButton(tUID, viewerUID) {
+            var actionsEl = document.getElementById('profile-actions');
             // Check if already friends
-            const friendDoc = await db.collection('users').doc(viewerUID)
-                .collection('friends').doc(targetUID).get();
-
-            if (friendDoc.exists) {
-                // Already friends
-                actionsEl.innerHTML = `
-                    <button class="btn-primary" disabled style="background:#0d2a1a;border:1px solid #4ade80;color:#4ade80;cursor:default">
-                        ✅ Friends
-                    </button>
-                    <button class="btn-danger" onclick="removeFriend('${targetUID}')">
-                        Remove Friend
-                    </button>
-                `;
-                return;
-            }
-
-            // Check if request already sent
-            const sentReq = await db.collection('friendRequests')
-                .where('from', '==', viewerUID)
-                .where('to', '==', targetUID)
-                .where('status', '==', 'pending')
-                .get();
-
-            if (!sentReq.empty) {
-                actionsEl.innerHTML = `
-                    <button class="btn-pending">⏳ Request Sent</button>
-                    <button class="btn-danger" onclick="cancelRequest('${sentReq.docs[0].id}')">
-                        Cancel Request
-                    </button>
-                `;
-                return;
-            }
-
-            // Check if they sent us a request
-            const receivedReq = await db.collection('friendRequests')
-                .where('from', '==', targetUID)
-                .where('to', '==', viewerUID)
-                .where('status', '==', 'pending')
-                .get();
-
-            if (!receivedReq.empty) {
-                const reqId = receivedReq.docs[0].id;
-                actionsEl.innerHTML = `
-                    <button class="btn-primary" onclick="acceptRequest('${reqId}', '${targetUID}')">
-                        ✅ Accept Request
-                    </button>
-                    <button class="btn-danger" onclick="rejectRequest('${reqId}')">
-                        ❌ Reject
-                    </button>
-                `;
-                return;
-            }
-
-            // Not friends — show add button
-            actionsEl.innerHTML = `
-                <button class="btn-primary" onclick="sendFriendRequest('${targetUID}')">
-                    👥 Add Friend
-                </button>
-            `;
-        }
-
-        async function sendFriendRequest(targetUID) {
-            const viewerName = localStorage.getItem('iqUsername') || 'Player';
-            try {
-                await db.collection('friendRequests').add({
-                    from: currentUserUID,
-                    to: targetUID,
-                    fromName: viewerName,
-                    status: 'pending',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            db.collection('users').doc(viewerUID).collection('friends').doc(tUID).get()
+                .then(function(friendDoc) {
+                    if (friendDoc.exists) {
+                        actionsEl.innerHTML =
+                            '<button class="btn-primary" disabled style="background:#0d2a1a;border:1px solid #4ade80;color:#4ade80;cursor:default">✅ Friends</button>' +
+                            '<button class="btn-danger" onclick="removeFriend(\'' + tUID + '\')">Remove Friend</button>';
+                        return;
+                    }
+                    // Check sent request
+                    return db.collection('friendRequests')
+                        .where('from', '==', viewerUID).where('to', '==', tUID).where('status', '==', 'pending').get()
+                        .then(function(sentReq) {
+                            if (!sentReq.empty) {
+                                actionsEl.innerHTML =
+                                    '<button class="btn-pending">⏳ Request Sent</button>' +
+                                    '<button class="btn-danger" onclick="cancelRequest(\'' + sentReq.docs[0].id + '\')">Cancel Request</button>';
+                                return;
+                            }
+                            // Check received request
+                            return db.collection('friendRequests')
+                                .where('from', '==', tUID).where('to', '==', viewerUID).where('status', '==', 'pending').get()
+                                .then(function(receivedReq) {
+                                    if (!receivedReq.empty) {
+                                        var reqId = receivedReq.docs[0].id;
+                                        actionsEl.innerHTML =
+                                            '<button class="btn-primary" onclick="acceptRequest(\'' + reqId + '\', \'' + tUID + '\')">✅ Accept Request</button>' +
+                                            '<button class="btn-danger" onclick="rejectRequest(\'' + reqId + '\')">❌ Reject</button>';
+                                        return;
+                                    }
+                                    actionsEl.innerHTML =
+                                        '<button class="btn-primary" onclick="sendFriendRequest(\'' + tUID + '\')">👥 Add Friend</button>';
+                                });
+                        });
+                })
+                .catch(function() {
+                    actionsEl.innerHTML = '<button class="btn-primary" onclick="sendFriendRequest(\'' + tUID + '\')">👥 Add Friend</button>';
                 });
-                await renderFriendButton(targetUID, currentUserUID);
+        }
+
+        function sendFriendRequest(tUID) {
+            var viewerName = localStorage.getItem('iqUsername') || 'Player';
+            db.collection('friendRequests').add({
+                from: currentUserUID, to: tUID, fromName: viewerName,
+                status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function() {
+                renderFriendButton(tUID, currentUserUID);
                 alert('Friend request sent!');
-            } catch(e) {
-                alert('Could not send request: ' + e.message);
-            }
+            }).catch(function(e) { alert('Could not send request: ' + e.message); });
         }
 
-        async function cancelRequest(reqId) {
-            try {
-                await db.collection('friendRequests').doc(reqId).delete();
-                await renderFriendButton(targetUID, currentUserUID);
-            } catch(e) {
-                alert('Could not cancel: ' + e.message);
-            }
+        function cancelRequest(reqId) {
+            db.collection('friendRequests').doc(reqId).delete()
+                .then(function() { renderFriendButton(targetUID, currentUserUID); })
+                .catch(function(e) { alert('Could not cancel: ' + e.message); });
         }
 
-        async function acceptRequest(reqId, fromUID) {
-            try {
-                const myName = localStorage.getItem('iqUsername') || 'Player';
-
-                // Get the other user's name
-                const otherDoc = await db.collection('users').doc(fromUID).get();
-                const otherName = otherDoc.data().username || 'Player';
-
-                // Add to both users' friends subcollection
-                await db.collection('users').doc(currentUserUID)
-                    .collection('friends').doc(fromUID).set({
-                        uid: fromUID,
-                        username: otherName,
-                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                await db.collection('users').doc(fromUID)
-                    .collection('friends').doc(currentUserUID).set({
-                        uid: currentUserUID,
-                        username: myName,
-                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                // Update request status
-                await db.collection('friendRequests').doc(reqId)
-                    .update({ status: 'accepted' });
-
-                await renderFriendButton(fromUID, currentUserUID);
-                alert('You are now friends with ' + otherName + '!');
-            } catch(e) {
-                alert('Could not accept: ' + e.message);
-            }
+        function acceptRequest(reqId, fromUID) {
+            var myName = localStorage.getItem('iqUsername') || 'Player';
+            var ts = firebase.firestore.FieldValue.serverTimestamp();
+            db.collection('users').doc(fromUID).get()
+                .then(function(otherDoc) {
+                    var otherName = otherDoc.data().username || 'Player';
+                    return db.collection('users').doc(currentUserUID).collection('friends').doc(fromUID)
+                        .set({ uid: fromUID, username: otherName, addedAt: ts })
+                        .then(function() {
+                            return db.collection('users').doc(fromUID).collection('friends').doc(currentUserUID)
+                                .set({ uid: currentUserUID, username: myName, addedAt: ts });
+                        })
+                        .then(function() {
+                            return db.collection('friendRequests').doc(reqId).update({ status: 'accepted' });
+                        })
+                        .then(function() {
+                            renderFriendButton(fromUID, currentUserUID);
+                            alert('You are now friends with ' + otherName + '!');
+                        });
+                })
+                .catch(function(e) { alert('Could not accept: ' + e.message); });
         }
 
-        async function rejectRequest(reqId) {
-            try {
-                await db.collection('friendRequests').doc(reqId)
-                    .update({ status: 'rejected' });
-                await renderFriendButton(targetUID, currentUserUID);
-            } catch(e) {
-                alert('Could not reject: ' + e.message);
-            }
+        function rejectRequest(reqId) {
+            db.collection('friendRequests').doc(reqId).update({ status: 'rejected' })
+                .then(function() { renderFriendButton(targetUID, currentUserUID); })
+                .catch(function(e) { alert('Could not reject: ' + e.message); });
         }
 
-        async function removeFriend(friendUID) {
+        function removeFriend(friendUID) {
             if (!confirm('Remove this friend?')) return;
-            try {
-                await db.collection('users').doc(currentUserUID)
-                    .collection('friends').doc(friendUID).delete();
-                await db.collection('users').doc(friendUID)
-                    .collection('friends').doc(currentUserUID).delete();
-                await renderFriendButton(friendUID, currentUserUID);
-                alert('Friend removed.');
-            } catch(e) {
-                alert('Could not remove: ' + e.message);
-            }
+            db.collection('users').doc(currentUserUID).collection('friends').doc(friendUID).delete()
+                .then(function() {
+                    return db.collection('users').doc(friendUID).collection('friends').doc(currentUserUID).delete();
+                })
+                .then(function() {
+                    renderFriendButton(friendUID, currentUserUID);
+                    alert('Friend removed.');
+                })
+                .catch(function(e) { alert('Could not remove: ' + e.message); });
         }
 
         function renderBadges(games, wins, best, streak) {
-            const achievements = getAchievements(games, wins, best, streak);
-            const earned = achievements.filter(a => a.unlocked);
+            var achievements = getAchievements(games, wins, best, streak);
+            var earned = achievements.filter(function(a) { return a.unlocked; });
             document.getElementById('profile-badges').innerHTML = earned.length > 0
-                ? earned.map(a => `<span class="badge-pill">${a.icon} ${a.name}</span>`).join('')
+                ? earned.map(function(a) { return '<span class="badge-pill">' + a.icon + ' ' + a.name + '</span>'; }).join('')
                 : '<span style="color:#444;font-size:13px">No achievements yet.</span>';
         }
 
@@ -560,26 +516,25 @@
         }
 
         function renderAchievements(games, wins, best, streak) {
-            const achievements = [
+            var achievements = [
                 { icon:'🎮', name:'First Game',     desc:'Play your first game',       unlocked: games >= 1  },
                 { icon:'🏆', name:'First Win',      desc:'Win your first match',        unlocked: wins >= 1   },
                 { icon:'🔥', name:'On Fire',        desc:'Win 3 games in a row',        unlocked: streak >= 3 },
                 { icon:'🎯', name:'Sharp Mind',     desc:'Score 10+ in a single game',  unlocked: best >= 10  },
                 { icon:'⚡', name:'Lightning Fast', desc:'Score 15+ in a single game',  unlocked: best >= 15  },
                 { icon:'💎', name:'Diamond Brain',  desc:'Score 20+ in a single game',  unlocked: best >= 20  },
-                { icon:'🎖️', name:'Veteran',       desc:'Play 10 games total',         unlocked: games >= 10 },
+                { icon:'🎖️', name:'Veteran',        desc:'Play 10 games total',         unlocked: games >= 10 },
                 { icon:'👑', name:'Quiz King',      desc:'Win 5 matches total',         unlocked: wins >= 5   },
                 { icon:'🚀', name:'Unstoppable',    desc:'Win 5 games in a row',        unlocked: streak >= 5 },
             ];
-
-            document.getElementById('ach-grid').innerHTML = achievements.map(a => `
-                <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'}">
-                    ${a.unlocked ? '<div class="ach-unlocked-tag">✓ Unlocked</div>' : ''}
-                    <div class="ach-icon">${a.icon}</div>
-                    <div class="ach-name">${a.name}</div>
-                    <div class="ach-desc">${a.desc}</div>
-                </div>
-            `).join('');
+            document.getElementById('ach-grid').innerHTML = achievements.map(function(a) {
+                return '<div class="achievement ' + (a.unlocked ? 'unlocked' : 'locked') + '">' +
+                    (a.unlocked ? '<div class="ach-unlocked-tag">✓ Unlocked</div>' : '') +
+                    '<div class="ach-icon">' + a.icon + '</div>' +
+                    '<div class="ach-name">' + a.name + '</div>' +
+                    '<div class="ach-desc">' + a.desc + '</div>' +
+                '</div>';
+            }).join('');
         }
 
         function showNotFound() {
