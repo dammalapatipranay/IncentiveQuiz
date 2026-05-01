@@ -444,10 +444,47 @@
             font-size: 14px;
             color: #555;
         }
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 600px) {
+            nav { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+            .logo { font-size: 17px; }
+            .nav-links { gap: 4px; flex-wrap: wrap; }
+            .nav-links a { font-size: 12px; padding: 6px 8px; }
+            .nav-play { padding: 6px 12px !important; }
+            .nav-logout-btn { font-size: 11px; padding: 5px 8px; }
+
+            .main { padding: 80px 14px 24px; }
+
+            .page-header h1 { font-size: 26px; }
+            .page-header p  { font-size: 13px; }
+
+            .podium { gap: 8px; }
+            .podium-slot { min-width: 80px; }
+            .podium-avatar { width: 52px; height: 52px; font-size: 18px; }
+            .first .podium-avatar { width: 64px; height: 64px; font-size: 22px; }
+            .podium-name  { font-size: 11px; }
+            .podium-score { font-size: 11px; }
+            .first .podium-block  { height: 80px; }
+            .second .podium-block { height: 56px; }
+            .third .podium-block  { height: 44px; }
+
+            .tabs { gap: 6px; flex-wrap: wrap; }
+            .tab-btn { font-size: 12px; padding: 7px 12px; }
+
+            .lb-table-header,
+            .lb-row { grid-template-columns: 44px 1fr 80px; }
+            .games-col { display: none; }
+
+            .your-rank-banner {
+                flex-direction: column;
+                gap: 12px;
+                padding: 20px 16px;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- AUTH LOADING OVERLAY -->
     <div class="auth-loading" id="auth-loading">
         <div class="spinner"></div>
         <p>Loading...</p>
@@ -459,13 +496,16 @@
     <script src="firebase.js"></script>
     <script src="navbar.js"></script>
 
+    <div id="page-content" style="display:none">
+
     <nav>
-        <div class="logo">⚡ Incentive<span>Quiz</span></div>
+        <div class="logo" onclick="window.location.href='dashboard.html'" style="cursor:pointer">⚡ Incentive<span>Quiz</span></div>
         <div class="nav-links">
             <a href="dashboard.html">Dashboard</a>
-            <a href="leaderboard.html" style="color:white">Leaderboard</a>
+            <a href="leaderboard.html" style="color:white;background-color:#1e1e3a">Leaderboard</a>
             <a href="profile.html">Profile</a>
             <a href="game.html" class="nav-play">⚡ Play</a>
+            <button onclick="logoutUser()" class="nav-logout-btn">Logout</button>
         </div>
     </nav>
 
@@ -514,87 +554,50 @@
             </button>
         </div>
 
-    </div>
+    </div> <!-- end .main -->
+    </div> <!-- end #page-content -->
 
     <script>
+        var allPlayers = [];
+        var currentTab = 'best';
 
-        let currentUsername = '';
-        let allPlayers = [];
-        let currentTab = 'best';
-
-        
         function viewUserProfile(uid) {
             window.location.href = 'user-profile.html?uid=' + uid;
         }
 
-        auth.onAuthStateChanged(async user => {
+        auth.onAuthStateChanged(function(user) {
             if (!user) {
                 window.location.href = 'login.html';
                 return;
             }
             document.getElementById('auth-loading').style.display = 'none';
             document.getElementById('page-content').style.display = 'block';
-            if (loader) loader.style.display = 'none';
-            if (content) content.style.display = 'block';
-            renderNavbar('leaderboard');
-            const doc = await db.collection('users').doc(user.uid).get();
-            if (doc.exists) {
-                currentUsername = doc.data().username;
-            }
 
-            loadLeaderboard('best');
-            
+            db.collection('users').doc(user.uid).get().then(function(doc) {
+                if (doc.exists) currentUsername = doc.data().username;
+                loadLeaderboard('best');
+            }).catch(function() {
+                loadLeaderboard('best');
+            });
         });
 
-        async function loadLeaderboard(sortBy) {
+        function loadLeaderboard(sortBy) {
             currentTab = sortBy;
+            var fieldMap = { best: 'best', wins: 'wins', games: 'games' };
+            var field = fieldMap[sortBy];
 
-            // Map tab to Firestore field
-            const fieldMap = {
-                best: 'best',
-                wins: 'wins',
-                games: 'games'
-            };
-
-            const field = fieldMap[sortBy];
-
-            try {
-                const snap = await db.collection('users')
-                    .orderBy(field, 'desc')
-                    .limit(20)
-                    .get();
-
-                allPlayers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-
-                renderPodium(allPlayers);
-                renderTable(allPlayers, field);
-                showYourRank(allPlayers, field);
-                launchConfetti();
-
-            } catch (e) {
-                document.getElementById('lb-body').innerHTML =
-                    '<div class="empty"><div>⚠️</div><p>Could not load leaderboard.</p></div>';
-            }
-            const flag = getCountryFlag();
-
-            return `
-                <div class="lb-row ${isYou ? 'highlight' : ''}">
-                    <div class="rank-col">${rankDisplay}</div>
-                    <div class="player-col">
-                        <div class="player-ava">${(p.username||'P')[0].toUpperCase()}</div>
-                        <div>
-                            <span class="player-flag">${isYou ? flag : '🌍'}</span>
-                            <span class="player-name" style="${isYou ? 'color:#a78bfa' : 'cursor:pointer'}"
-                                onclick="${isYou ? '' : `viewUserProfile('${p.uid}')`}">
-                                ${p.username}
-                            </span>
-                            ${isYou ? '<span class="you-tag">You</span>' : ''}
-                        </div>
-                    </div>
-                    <div class="score-col">${displayVal}</div>
-                    <div class="games-col">${p.games || 0} games</div>
-                </div>
-            `;
+            db.collection('users').orderBy(field, 'desc').limit(20).get()
+                .then(function(snap) {
+                    allPlayers = snap.docs.map(function(d) { return Object.assign({ uid: d.id }, d.data()); });
+                    renderPodium(allPlayers);
+                    renderTable(allPlayers, field);
+                    showYourRank(allPlayers, field);
+                    launchConfetti();
+                })
+                .catch(function() {
+                    document.getElementById('lb-body').innerHTML =
+                        '<div class="empty"><div>⚠️</div><p>Could not load leaderboard.</p></div>';
+                });
         }
         function getCountryFlag() {
             try {
@@ -661,37 +664,40 @@
             }).join('');
         }
 
-        document.getElementById('lb-body').innerHTML = players.map((p, i) => {
-            const isYou = p.username === currentUsername;
-            const rankDisplay = i < 3
-                ? `<span class="${rankClasses[i]}">${medals[i]}</span>`
-                : `<span class="rank-other">#${i + 1}</span>`;
+        function renderTable(players, field) {
+            var rankClasses = ['rank-gold', 'rank-silver', 'rank-bronze'];
+            var medals = ['🥇', '🥈', '🥉'];
+            var flag = getCountryFlag();
 
-            const displayVal = currentTab === 'wins'
-                ? (p.wins || 0) + ' wins'
-                : currentTab === 'games'
-                ? (p.games || 0) + ' games'
-                : (p.best || 0) + ' pts';
+            document.getElementById('lb-body').innerHTML = players.map(function(p, i) {
+                var isYou = p.username === currentUsername;
+                var rankDisplay = i < 3
+                    ? '<span class="' + rankClasses[i] + '">' + medals[i] + '</span>'
+                    : '<span class="rank-other">#' + (i + 1) + '</span>';
+                var displayVal = currentTab === 'wins'
+                    ? (p.wins || 0) + ' wins'
+                    : currentTab === 'games'
+                    ? (p.games || 0) + ' games'
+                    : (p.best || 0) + ' pts';
 
-            return `
-                <div class="lb-row ${isYou ? 'highlight' : ''}">
-                    <div class="rank-col">${rankDisplay}</div>
-                    <div class="player-col">
-                        <div class="player-ava">${(p.username || 'P')[0].toUpperCase()}</div>
-                        <div>
-                            <span class="player-name"
-                                style="${isYou ? 'color:#a78bfa' : 'cursor:pointer'}"
-                                onclick="${isYou ? '' : `viewUserProfile('${p.uid}')`}">
-                                ${p.username}
-                            </span>
-                            ${isYou ? '<span class="you-tag">You</span>' : ''}
-                        </div>
-                    </div>
-                    <div class="score-col">${displayVal}</div>
-                    <div class="games-col">${p.games || 0} games</div>
-                </div>
-            `;
-        }).join('');
+                return '<div class="lb-row ' + (isYou ? 'highlight' : '') + '">' +
+                    '<div class="rank-col">' + rankDisplay + '</div>' +
+                    '<div class="player-col">' +
+                        '<div class="player-ava">' + (p.username || 'P')[0].toUpperCase() + '</div>' +
+                        '<div>' +
+                            '<span class="player-flag">' + (isYou ? flag : '🌍') + '</span>' +
+                            '<span class="player-name" style="' + (isYou ? 'color:#a78bfa' : 'cursor:pointer') + '"' +
+                                (isYou ? '' : ' onclick="viewUserProfile(\'' + p.uid + '\')"') + '>' +
+                                p.username +
+                            '</span>' +
+                            (isYou ? '<span class="you-tag">You</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="score-col">' + displayVal + '</div>' +
+                    '<div class="games-col">' + (p.games || 0) + ' games</div>' +
+                '</div>';
+            }).join('');
+        }
 
         function showYourRank(players, field) {
             const rank = players.findIndex(p => p.username === currentUsername) + 1;
@@ -714,53 +720,42 @@
                 loadLeaderboard(tab);
             }
         }
-        async function loadFriendsLeaderboard() {
-            const uid = localStorage.getItem('iqUID');
+        function loadFriendsLeaderboard() {
+            var uid = localStorage.getItem('iqUID');
             document.getElementById('lb-body').innerHTML = '<div class="loading">Loading friends...</div>';
             document.getElementById('podium').innerHTML = '<div class="loading">Loading...</div>';
 
-            try {
-                // Get friends list
-                const friendsSnap = await db.collection('users').doc(uid)
-                    .collection('friends').get();
-
-                if (friendsSnap.empty) {
-                    document.getElementById('lb-body').innerHTML = `
-                        <div class="empty">
-                            <div>👥</div>
-                            <p>You have no friends yet. Add friends from the leaderboard!</p>
-                        </div>`;
-                    document.getElementById('podium').innerHTML = '';
-                    return;
-                }
-
-                // Get friend UIDs
-                const friendUIDs = friendsSnap.docs.map(d => d.id);
-
-                // Also include yourself
-                friendUIDs.push(uid);
-
-                // Load all their user data
-                const friendData = [];
-                for (const fUID of friendUIDs) {
-                    const doc = await db.collection('users').doc(fUID).get();
-                    if (doc.exists) {
-                        friendData.push({ uid: doc.id, ...doc.data() });
+            db.collection('users').doc(uid).collection('friends').get()
+                .then(function(friendsSnap) {
+                    if (friendsSnap.empty) {
+                        document.getElementById('lb-body').innerHTML =
+                            '<div class="empty"><div>👥</div><p>You have no friends yet. Add friends from the leaderboard!</p></div>';
+                        document.getElementById('podium').innerHTML = '';
+                        return;
                     }
-                }
+                    var friendUIDs = friendsSnap.docs.map(function(d) { return d.id; });
+                    friendUIDs.push(uid);
 
-                // Sort by best score
-                friendData.sort((a, b) => (b.best || 0) - (a.best || 0));
+                    var promises = friendUIDs.map(function(fUID) {
+                        return db.collection('users').doc(fUID).get();
+                    });
 
-                renderPodium(friendData);
-                renderTable(friendData, 'best');
-                showYourRank(friendData, 'best');
-                launchConfetti();
+                    return Promise.all(promises).then(function(docs) {
+                        var friendData = docs.filter(function(d) { return d.exists; })
+                            .map(function(d) { return Object.assign({ uid: d.id }, d.data()); })
+                            .sort(function(a, b) { return (b.best || 0) - (a.best || 0); });
 
-            } catch(e) {
-                console.log('Friends leaderboard error:', e);
-                document.getElementById('lb-body').innerHTML = '<div class="empty"><div>⚠️</div><p>Could not load friends leaderboard.</p></div>';
-            }
+                        renderPodium(friendData);
+                        renderTable(friendData, 'best');
+                        showYourRank(friendData, 'best');
+                        launchConfetti();
+                    });
+                })
+                .catch(function(e) {
+                    console.log('Friends leaderboard error:', e);
+                    document.getElementById('lb-body').innerHTML =
+                        '<div class="empty"><div>⚠️</div><p>Could not load friends leaderboard.</p></div>';
+                });
         }
 
     </script>
