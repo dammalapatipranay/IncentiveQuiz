@@ -245,10 +245,39 @@
 
         .page-btn.active { background-color:#a78bfa; border-color:#a78bfa; color:white; }
         .page-btn:hover:not(.active) { border-color:#a78bfa; color:white; }
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 600px) {
+            nav { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+            .logo { font-size: 17px; }
+            .nav-links { gap: 4px; flex-wrap: wrap; }
+            .nav-links a { font-size: 12px; padding: 6px 8px; }
+            .nav-play { padding: 6px 12px !important; }
+            .nav-logout-btn { font-size: 11px; padding: 5px 8px; }
+
+            .main { padding: 80px 14px 24px; }
+
+            .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .page-header h1 { font-size: 22px; }
+            .back-btn { font-size: 13px; padding: 8px 14px; }
+
+            .mini-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .mini-stat { padding: 14px 10px; border-radius: 10px; }
+            .mini-stat-val { font-size: 22px; }
+
+            .filter-bar { flex-wrap: wrap; gap: 6px; }
+            .filter-btn { font-size: 12px; padding: 5px 12px; }
+
+            .history-table-header { display: none; }
+            .history-row {
+                grid-template-columns: 1fr 80px !important;
+                gap: 6px;
+            }
+            .history-row > div:nth-child(3) { display: none; }
+            .history-row > div:nth-child(4) { display: none; }
+        }
     </style>
 </head>
 <body>
-
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -262,12 +291,13 @@
 
     <div class="page-content" id="page-content">
         <nav>
-            <div class="logo">⚡ Incentive<span>Quiz</span></div>
+            <div class="logo" onclick="window.location.href='dashboard.html'" style="cursor:pointer">⚡ Incentive<span>Quiz</span></div>
             <div class="nav-links">
                 <a href="dashboard.html">Dashboard</a>
                 <a href="profile.html">Profile</a>
                 <a href="leaderboard.html">Leaderboard</a>
                 <a href="game.html" class="nav-play">⚡ Play</a>
+                <button onclick="logoutUser()" class="nav-logout-btn">Logout</button>
             </div>
         </nav>
 
@@ -339,61 +369,61 @@
     </div>
 
     <script>
-        let allHistory = [];
-        let filteredHistory = [];
-        let currentFilter = 'all';
-        let currentCat = '';
-        let currentPage = 1;
-        const perPage = 15;
+        var allHistory = [];
+        var filteredHistory = [];
+        var currentFilter = 'all';
+        var currentCat = '';
+        var currentPage = 1;
+        var perPage = 15;
 
-        auth.onAuthStateChanged(async user => {
+        auth.onAuthStateChanged(function(user) {
             if (!user) { window.location.href = 'login.html'; return; }
-
             localStorage.setItem('iqUID', user.uid);
-
-            const loader = document.getElementById('auth-loading');
-            const content = document.getElementById('page-content');
+            var loader = document.getElementById('auth-loading');
+            var content = document.getElementById('page-content');
             if (loader) loader.style.display = 'none';
             if (content) content.style.display = 'block';
-            renderNavbar('game-history');
-
-            await loadHistory(user.uid);
+            loadHistory(user.uid);
         });
 
-        async function loadHistory(uid) {
-            try {
-                const snap = await db.collection('users').doc(uid)
-                    .collection('history')
-                    .orderBy('createdAt', 'desc')
-                    .get();
+        function loadHistory(uid) {
+            db.collection('users').doc(uid)
+                .collection('history')
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then(function(snap) {
+                    allHistory = snap.docs.map(function(d) { return d.data(); });
+                    processHistory();
+                })
+                .catch(function() {
+                    db.collection('users').doc(uid)
+                        .collection('history').get()
+                        .then(function(snap2) {
+                            allHistory = snap2.docs.map(function(d) { return d.data(); })
+                                .sort(function(a, b) {
+                                    return (b.createdAt && b.createdAt.seconds || 0) - (a.createdAt && a.createdAt.seconds || 0);
+                                });
+                            processHistory();
+                        })
+                        .catch(function() {
+                            allHistory = [];
+                            processHistory();
+                        });
+                });
+        }
 
-                allHistory = snap.docs.map(d => d.data());
-
-            } catch(e) {
-                // Fallback without orderBy
-                try {
-                    const snap2 = await db.collection('users').doc(uid)
-                        .collection('history').get();
-                    allHistory = snap2.docs.map(d => d.data())
-                        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                } catch(e2) {
-                    allHistory = [];
-                }
-            }
-
-            // Update stats
-            const wins   = allHistory.filter(g => g.won).length;
-            const losses = allHistory.length - wins;
-            const avgScore = allHistory.length > 0
-                ? Math.round(allHistory.reduce((s, g) => s + (g.score || 0), 0) / allHistory.length)
+        function processHistory() {
+            var wins   = allHistory.filter(function(g) { return g.won; }).length;
+            var losses = allHistory.length - wins;
+            var avgScore = allHistory.length > 0
+                ? Math.round(allHistory.reduce(function(s, g) { return s + (g.score || 0); }, 0) / allHistory.length)
                 : 0;
 
             document.getElementById('total-games').textContent  = allHistory.length;
             document.getElementById('total-wins').textContent   = wins;
             document.getElementById('total-losses').textContent = losses;
             document.getElementById('avg-score').textContent    = avgScore;
-            document.getElementById('history-count').textContent =
-                allHistory.length + ' games played in total';
+            document.getElementById('history-count').textContent = allHistory.length + ' games played in total';
 
             applyFilters();
         }
