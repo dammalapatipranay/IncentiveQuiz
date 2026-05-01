@@ -324,6 +324,70 @@
             font-size: 13px;
             color: #444;
         }
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 600px) {
+            nav {
+                padding: 14px 18px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .logo { font-size: 18px; }
+            .nav-links { gap: 4px; }
+            .nav-links a { font-size: 13px; padding: 6px 10px; }
+            .nav-login { padding: 6px 14px !important; }
+
+            .hero {
+                padding: 100px 20px 60px;
+            }
+            .hero h1 {
+                font-size: 36px;
+                line-height: 1.2;
+            }
+            .hero p { font-size: 15px; margin-bottom: 32px; }
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+                gap: 12px;
+            }
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                padding: 14px 24px;
+                font-size: 15px;
+            }
+
+            .stats-bar {
+                flex-wrap: wrap;
+                gap: 28px;
+                padding: 32px 20px;
+                justify-content: space-around;
+            }
+            .stat h3 { font-size: 24px; }
+            .stat p  { font-size: 13px; }
+
+            .section {
+                padding: 60px 20px;
+            }
+            .section h2 { font-size: 28px; }
+
+            .steps {
+                flex-direction: column;
+                align-items: center;
+                gap: 14px;
+            }
+            .step-card { width: 100%; max-width: 340px; }
+
+            .categories-section { padding: 60px 20px; }
+            .cta-section { padding: 60px 20px; }
+            .cta-section h2 { font-size: 30px; }
+            .cta-section p  { font-size: 15px; }
+
+            footer {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+                padding: 24px 20px;
+            }
+        }
     </style>
 </head>
 <body>
