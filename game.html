@@ -571,6 +571,99 @@
         .auth-loading p { font-size: 14px; color: #555; }
         .page-content { display: none; }
 
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 600px) {
+            .top-bar {
+                padding: 12px 16px;
+            }
+            .top-bar .logo { font-size: 16px; }
+
+            .game-area {
+                padding: 16px 12px;
+            }
+
+            .lobby-card {
+                padding: 28px 20px;
+                border-radius: 16px;
+            }
+            .lobby-card h2 { font-size: 22px; }
+            .lobby-card p  { font-size: 13px; margin-bottom: 24px; }
+
+            .category-grid { gap: 8px; margin-bottom: 24px; }
+            .cat-btn { font-size: 12px; padding: 8px 14px; }
+            .start-btn { padding: 14px 36px; font-size: 16px; }
+
+            .countdown-number { font-size: 80px; }
+
+            .quiz-header { margin-bottom: 14px; }
+            .question-count { font-size: 13px; }
+            .players-alive  { font-size: 13px; }
+            .timer-wrap { width: 52px; height: 52px; }
+            .timer-wrap svg { width: 52px; height: 52px; }
+            .timer-num { font-size: 17px; }
+
+            .progress-bar { margin-bottom: 12px; }
+            .zone-badge { font-size: 11px; padding: 4px 12px; }
+            .lifeline-indicator { font-size: 11px; padding: 3px 10px; }
+
+            .question-text {
+                font-size: 16px;
+                margin-bottom: 20px;
+                line-height: 1.5;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .option-btn {
+                padding: 14px 16px;
+                font-size: 14px;
+                border-radius: 12px;
+            }
+
+            .option-label {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+
+            .eliminated-card, .win-card {
+                padding: 32px 20px;
+                border-radius: 16px;
+            }
+            .eliminated-icon { font-size: 52px; }
+            .eliminated-card h2 { font-size: 26px; }
+            .win-card h2 { font-size: 28px; }
+            .score-display { font-size: 40px; }
+
+            .post-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .post-stat-val { font-size: 16px; }
+
+            .btn-row { flex-direction: column; gap: 10px; }
+            .replay-btn, .home-btn {
+                width: 100%;
+                padding: 13px 20px;
+                font-size: 15px;
+            }
+
+            .zone-banner {
+                width: 90vw;
+                padding: 24px 20px;
+            }
+            .zone-banner-title { font-size: 20px; }
+
+            .streak-banner {
+                top: 70px;
+                right: 12px;
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+        }
     </style>
 </head>
 <body>
