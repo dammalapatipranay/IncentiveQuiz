@@ -483,6 +483,25 @@
             color: #555;
             margin-top: 4px;
         }
+        /* ── SKELETON LOADING ── */
+        @keyframes shimmer {
+            0%   { background-position: -600px 0; }
+            100% { background-position:  600px 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #1a1a2e 25%, #2a2a4a 50%, #1a1a2e 75%);
+            background-size: 600px 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 8px;
+        }
+        .skel-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #1a1a2e; }
+        .skel-avatar { width:36px; height:36px; border-radius:50%; flex-shrink:0; }
+        .skel-lines { flex:1; display:flex; flex-direction:column; gap:6px; }
+        .skel-line-wide { height:12px; width:70%; }
+        .skel-line-narrow { height:10px; width:40%; }
+        .skel-score { width:40px; height:14px; }
+        .skel-stat { height:32px; width:60%; margin: 6px auto; border-radius:6px; }
+
         /* ── MOBILE RESPONSIVE ── */
         @media (max-width: 600px) {
             nav {
@@ -669,7 +688,11 @@
                     <span>🕹️ Game History</span>
                     <span style="font-size:12px;color:#a78bfa;font-weight:600">View All →</span>
                 </div>
-                <div id="recent-list"><div class="loading">Loading...</div></div>
+                <div id="recent-list">
+                    <div class="skel-row"><div class="skeleton skel-avatar"></div><div class="skel-lines"><div class="skeleton skel-line-wide"></div><div class="skeleton skel-line-narrow"></div></div><div class="skeleton skel-score"></div></div>
+                    <div class="skel-row"><div class="skeleton skel-avatar"></div><div class="skel-lines"><div class="skeleton skel-line-wide"></div><div class="skeleton skel-line-narrow"></div></div><div class="skeleton skel-score"></div></div>
+                    <div class="skel-row"><div class="skeleton skel-avatar"></div><div class="skel-lines"><div class="skeleton skel-line-wide"></div><div class="skeleton skel-line-narrow"></div></div><div class="skeleton skel-score"></div></div>
+                </div>
             </div>
 
         </div>
@@ -682,7 +705,11 @@
                     <button class="filter-btn" id="p-lb-friends" onclick="switchProfileLb('friends')">👥 Friends</button>
                 </div>
             </div>
-            <div id="profile-lb-list"><div class="loading">Loading...</div></div>
+            <div id="profile-lb-list">
+                <div class="skel-row"><div class="skeleton skel-avatar"></div><div class="skel-lines"><div class="skeleton skel-line-wide"></div></div><div class="skeleton skel-score"></div></div>
+                <div class="skel-row"><div class="skeleton skel-avatar"></div><div class="skel-lines"><div class="skeleton skel-line-wide"></div></div><div class="skeleton skel-score"></div></div>
+                <div class="skel-row"><div class="skeleton skel-avatar"></div><div class="skel-lines"><div class="skeleton skel-line-wide"></div></div><div class="skeleton skel-score"></div></div>
+            </div>
             <a href="leaderboard.html" style="display:block;text-align:center;margin-top:16px;font-size:13px;color:#a78bfa;text-decoration:none">
                 View full leaderboard →
             </a>
