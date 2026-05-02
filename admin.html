@@ -622,7 +622,24 @@
                 <h1>Question Manager</h1>
                 <p>Add, edit and delete quiz questions stored in Firebase</p>
             </div>
-            <button class="add-btn" onclick="openModal()">+ Add Question</button>
+            <div style="display:flex;gap:10px;align-items:center">
+                <button onclick="toggleReportsPanel()" id="reports-tab-btn" style="padding:10px 20px;background:transparent;border:1px solid #2a2a4a;color:#aaa;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;position:relative">
+                    🚩 Reports <span id="reports-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:#f87171;color:white;font-size:10px;font-weight:700;border-radius:10px;padding:2px 6px"></span>
+                </button>
+                <button class="add-btn" onclick="openModal()">+ Add Question</button>
+            </div>
+        </div>
+
+        <!-- REPORTS PANEL -->
+        <div id="reports-panel" style="display:none;background:#0d0d1f;border:1px solid #2a1a1a;border-radius:16px;padding:24px;margin-bottom:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 style="font-size:16px;font-weight:700;color:#f87171">🚩 Question Reports</h3>
+                <div style="display:flex;gap:8px">
+                    <button onclick="loadReports('pending')" id="rfilter-pending" style="padding:6px 14px;background:#a78bfa;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Pending</button>
+                    <button onclick="loadReports('resolved')" id="rfilter-resolved" style="padding:6px 14px;background:transparent;border:1px solid #2a2a4a;color:#aaa;border-radius:8px;font-size:12px;cursor:pointer">Resolved</button>
+                </div>
+            </div>
+            <div id="reports-list"><div style="color:#555;font-size:13px">Loading reports...</div></div>
         </div>
 
         <!-- STATS -->
@@ -771,6 +788,91 @@
 
     <script>
 
+        // ── REPORTS ──
+        var reportsPanelOpen = false;
+
+        function toggleReportsPanel() {
+            reportsPanelOpen = !reportsPanelOpen;
+            var panel = document.getElementById('reports-panel');
+            panel.style.display = reportsPanelOpen ? 'block' : 'none';
+            if (reportsPanelOpen) loadReports('pending');
+        }
+
+        function loadReports(status) {
+            var el = document.getElementById('reports-list');
+            document.getElementById('rfilter-pending').style.background = status === 'pending' ? '#a78bfa' : 'transparent';
+            document.getElementById('rfilter-pending').style.border = status === 'pending' ? 'none' : '1px solid #2a2a4a';
+            document.getElementById('rfilter-resolved').style.background = status === 'resolved' ? '#a78bfa' : 'transparent';
+            document.getElementById('rfilter-resolved').style.border = status === 'resolved' ? 'none' : '1px solid #2a2a4a';
+            el.innerHTML = '<div style="color:#555;font-size:13px">Loading...</div>';
+
+            db.collection('questionReports').where('status', '==', status)
+                .orderBy('createdAt', 'desc').limit(50).get()
+                .then(function(snap) {
+                    if (snap.empty) {
+                        el.innerHTML = '<div style="color:#555;font-size:13px;padding:12px 0">No ' + status + ' reports.</div>';
+                        return;
+                    }
+                    el.innerHTML = snap.docs.map(function(d) {
+                        var r = d.data();
+                        var date = r.createdAt ? r.createdAt.toDate().toLocaleDateString('en-IN') : '';
+                        return '<div style="border:1px solid #2a2a4a;border-radius:12px;padding:16px;margin-bottom:10px">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">' +
+                                '<div style="flex:1">' +
+                                    '<div style="font-size:13px;color:#a78bfa;font-weight:600;margin-bottom:4px">' + r.reason + '</div>' +
+                                    '<div style="font-size:13px;color:#ddd;margin-bottom:4px">"' + (r.questionText||'').substring(0,100) + '"</div>' +
+                                    '<div style="font-size:11px;color:#555">' + (r.category||'') + ' · ' + (r.difficulty||'') + ' · ' + date + '</div>' +
+                                    (r.notes ? '<div style="font-size:12px;color:#888;margin-top:6px;padding:8px;background:#0a0a14;border-radius:6px">' + r.notes + '</div>' : '') +
+                                '</div>' +
+                                (status === 'pending' ? '<div style="display:flex;flex-direction:column;gap:6px">' +
+                                    '<button onclick="resolveReport(\'' + d.id + '\')" style="padding:6px 14px;background:#4ade80;color:#0a0a14;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✅ Resolve</button>' +
+                                    (r.questionId ? '<button onclick="editFromReport(\'' + r.questionId + '\')" style="padding:6px 14px;background:#a78bfa;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer">✏️ Edit Q</button>' : '') +
+                                '</div>' : '<span style="font-size:11px;color:#4ade80">✅ Resolved</span>') +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+                })
+                .catch(function() {
+                    // Try without orderBy if index missing
+                    db.collection('questionReports').where('status', '==', status).limit(50).get()
+                        .then(function(snap2) {
+                            if (snap2.empty) { el.innerHTML = '<div style="color:#555;font-size:13px;padding:12px 0">No ' + status + ' reports.</div>'; return; }
+                            el.innerHTML = '<div style="color:#888;font-size:13px;margin-bottom:8px">⚠️ Reports loaded without sorting. <a href="https://console.firebase.google.com" target="_blank" style="color:#a78bfa">Create index in Firebase Console</a></div>' +
+                                snap2.docs.map(function(d) {
+                                    var r = d.data();
+                                    return '<div style="border:1px solid #2a2a4a;border-radius:10px;padding:14px;margin-bottom:8px">' +
+                                        '<div style="font-size:13px;color:#a78bfa;margin-bottom:4px">' + r.reason + '</div>' +
+                                        '<div style="font-size:13px;color:#ddd">"' + (r.questionText||'').substring(0,100) + '"</div>' +
+                                    '</div>';
+                                }).join('');
+                        });
+                });
+        }
+
+        function resolveReport(reportId) {
+            db.collection('questionReports').doc(reportId).update({ status: 'resolved' })
+                .then(function() { loadReports('pending'); showToast('Report marked as resolved.', 'success'); })
+                .catch(function(e) { showToast('Error: ' + e.message, 'error'); });
+        }
+
+        function editFromReport(questionId) {
+            document.getElementById('reports-panel').style.display = 'none';
+            reportsPanelOpen = false;
+            var q = allQuestions.find(function(q) { return q.id === questionId; });
+            if (q) { editQuestion(q.id); } else { showToast('Question not found in current list. Refresh and try again.', 'error'); }
+        }
+
+        function checkPendingReports() {
+            db.collection('questionReports').where('status', '==', 'pending').get()
+                .then(function(snap) {
+                    var badge = document.getElementById('reports-badge');
+                    if (snap.size > 0) {
+                        badge.textContent = snap.size;
+                        badge.style.display = 'inline';
+                    }
+                }).catch(function() {});
+        }
+
         var ADMIN_EMAILS = ['dammalapatipranay@gmail.com'];
         var allQuestions = [];
         var editingId = null;
@@ -786,6 +888,7 @@
             }
             document.getElementById('admin-main').style.display = 'block';
             loadQuestions();
+            checkPendingReports();
         });
 
         // ── LOAD ALL QUESTIONS ──
