@@ -4,10 +4,12 @@ var firebaseConfig = {
     projectId: "incentivequiz",
     storageBucket: "incentivequiz.firebasestorage.app",
     messagingSenderId: "888079756974",
-    appId: "1:888079756974:web:e8c89b2c76844735f0473f"
+    appId: "1:888079756974:web:e8c89b2c76844735f0473f",
+    databaseURL: "https://incentivequiz-default-rtdb.firebaseio.com"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 var auth = firebase.auth();
-var db = firebase.firestore();
+var db   = firebase.firestore();
+var rtdb = firebase.database();
