@@ -127,6 +127,49 @@
             text-align: left;
         }
 
+        .google-btn {
+            width: 100%;
+            padding: 13px;
+            background-color: #fff;
+            color: #333;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .google-btn:hover { background-color: #f5f5f5; border-color: #bbb; }
+        .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .forgot-link {
+            display: block;
+            text-align: right;
+            margin-top: -6px;
+            margin-bottom: 12px;
+            color: #a78bfa;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .forgot-link:hover { color: #7c3aed; }
+
+        .reset-back {
+            display: block;
+            margin-top: 12px;
+            color: #555;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .reset-back:hover { color: #a78bfa; }
+
         .divider {
             display: flex;
             align-items: center;
@@ -167,7 +210,7 @@
         <div class="logo">⚡ Incentive<span>Quiz</span></div>
         <div class="subtitle">Free to play. Built for champions.</div>
 
-        <div class="tabs">
+        <div class="tabs" id="auth-tabs">
             <button class="tab active" id="tab-login" onclick="switchTab('login')">Login</button>
             <button class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
         </div>
@@ -175,12 +218,31 @@
         <div class="error-msg" id="error-msg"></div>
         <div class="success-msg" id="success-msg"></div>
 
-        <input type="text" id="username" placeholder="Username" style="display:none" />
-        <input type="email" id="email" placeholder="Email address" />
-        <input type="password" id="password" placeholder="Password" />
-        <input type="password" id="confirm-password" placeholder="Confirm Password" style="display:none" />
+        <!-- LOGIN / SIGNUP FORM -->
+        <div id="form-view">
+            <input type="text" id="username" placeholder="Username" style="display:none" />
+            <input type="email" id="email" placeholder="Email address" />
+            <input type="password" id="password" placeholder="Password" />
+            <span class="forgot-link" id="forgot-link" onclick="showResetView()">Forgot password?</span>
+            <input type="password" id="confirm-password" placeholder="Confirm Password" style="display:none" />
 
-        <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">Login</button>
+            <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">Login</button>
+
+            <div class="divider">or</div>
+
+            <button class="google-btn" id="google-btn" onclick="handleGoogleSignIn()">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+                Continue with Google
+            </button>
+        </div>
+
+        <!-- RESET PASSWORD VIEW -->
+        <div id="reset-view" style="display:none">
+            <p style="color:#888;font-size:13px;margin-bottom:16px;text-align:left">Enter your email and we'll send you a password reset link.</p>
+            <input type="email" id="reset-email" placeholder="Email address" />
+            <button class="submit-btn" id="reset-btn" onclick="handlePasswordReset()">Send Reset Link</button>
+            <span class="reset-back" onclick="hideResetView()">← Back to Login</span>
+        </div>
 
         <a href="index.html" class="back-home">← Back to Home</a>
     </div>
@@ -188,25 +250,108 @@
     <script>
         let currentTab = 'login';
 
-        // If already logged in — go straight to dashboard
         auth.onAuthStateChanged(user => {
             if (user) {
                 window.location.href = 'dashboard.html';
             } else {
-                // User is not logged in — now show the login card
                 document.querySelector('.card').style.display = 'block';
             }
         });
 
+        // ── FORGOT PASSWORD VIEWS ──
+        function showResetView() {
+            clearMessages();
+            document.getElementById('form-view').style.display = 'none';
+            document.getElementById('auth-tabs').style.display = 'none';
+            document.getElementById('reset-view').style.display = 'block';
+            document.querySelector('.subtitle').textContent = 'Reset your password';
+        }
+
+        function hideResetView() {
+            clearMessages();
+            document.getElementById('reset-view').style.display = 'none';
+            document.getElementById('auth-tabs').style.display = 'flex';
+            document.getElementById('form-view').style.display = 'block';
+            document.querySelector('.subtitle').textContent = 'Free to play. Built for champions.';
+        }
+
+        function handlePasswordReset() {
+            const email = document.getElementById('reset-email').value.trim();
+            if (!email) { showError('Please enter your email address.'); return; }
+            const btn = document.getElementById('reset-btn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            auth.sendPasswordResetEmail(email)
+                .then(function() {
+                    showSuccess('Reset link sent! Check your email inbox (and spam folder).');
+                    btn.textContent = '✅ Sent';
+                })
+                .catch(function(err) {
+                    btn.disabled = false;
+                    btn.textContent = 'Send Reset Link';
+                    if (err.code === 'auth/user-not-found') {
+                        showError('No account found with this email.');
+                    } else {
+                        showError(err.message);
+                    }
+                });
+        }
+
+        // ── GOOGLE SIGN-IN ──
+        function handleGoogleSignIn() {
+            clearMessages();
+            const btn = document.getElementById('google-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span>Signing in...</span>';
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then(function(result) {
+                    const user = result.user;
+                    // Check if this is a new user
+                    return db.collection('users').doc(user.uid).get().then(function(doc) {
+                        if (!doc.exists) {
+                            // New Google user — create profile
+                            var username = user.displayName
+                                ? user.displayName.replace(/\s+/g, '').substring(0, 20)
+                                : 'Player' + Math.floor(Math.random() * 9999);
+                            return db.collection('users').doc(user.uid).set({
+                                username: username,
+                                email: user.email,
+                                games: 0, wins: 0, best: 0, streak: 0,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }).then(function() {
+                                localStorage.setItem('iqUsername', username);
+                                localStorage.setItem('iqUID', user.uid);
+                            });
+                        } else {
+                            localStorage.setItem('iqUsername', doc.data().username);
+                            localStorage.setItem('iqUID', user.uid);
+                        }
+                    });
+                })
+                .then(function() {
+                    window.location.href = 'dashboard.html';
+                })
+                .catch(function(err) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Continue with Google';
+                    if (err.code === 'auth/popup-closed-by-user') return;
+                    if (err.code === 'auth/popup-blocked') {
+                        showError('Popup blocked. Please allow popups for this site.');
+                    } else {
+                        showError(err.message);
+                    }
+                });
+        }
+
         function switchTab(tab) {
             currentTab = tab;
             clearMessages();
-
             document.getElementById('tab-login').classList.toggle('active', tab === 'login');
             document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
-
             document.getElementById('username').style.display = tab === 'signup' ? 'block' : 'none';
             document.getElementById('confirm-password').style.display = tab === 'signup' ? 'block' : 'none';
+            document.getElementById('forgot-link').style.display = tab === 'login' ? 'block' : 'none';
             document.getElementById('submit-btn').textContent = tab === 'login' ? 'Login' : 'Create Account';
         }
 
