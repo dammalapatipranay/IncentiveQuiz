@@ -483,6 +483,19 @@
             color: #555;
             margin-top: 4px;
         }
+        .btn-danger-sm {
+            padding: 10px 20px;
+            background: transparent;
+            color: #f87171;
+            border: 1px solid #f87171;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger-sm:hover { background: #2a0d0d; }
+
         /* ── SKELETON LOADING ── */
         @keyframes shimmer {
             0%   { background-position: -600px 0; }
@@ -615,6 +628,8 @@
             <div class="profile-actions">
                 <button class="btn-primary" onclick="window.location.href='game.html'">⚡ Play Now</button>
                 <button class="btn-secondary" onclick="openFriends()">👥 Friends</button>
+                <button class="btn-secondary" onclick="openEditUsername()">✏️ Edit Username</button>
+                <button class="btn-danger-sm" onclick="confirmDeleteAccount()">🗑️ Delete Account</button>
             </div>
         </div>
 
@@ -757,6 +772,37 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- EDIT USERNAME MODAL -->
+    <div id="edit-username-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;display:none;align-items:center;justify-content:center">
+        <div style="background:#0d0d1f;border:1px solid #2a2a4a;border-radius:20px;padding:36px 32px;width:420px;max-width:90vw">
+            <h3 style="font-size:18px;font-weight:700;margin-bottom:8px">✏️ Change Username</h3>
+            <p style="font-size:13px;color:#555;margin-bottom:20px">This will update your username across the entire game.</p>
+            <input type="text" id="new-username-input" placeholder="New username" style="width:100%;padding:13px 16px;background:#0a0a14;border:1px solid #1e1e3a;border-radius:10px;color:white;font-size:15px;outline:none;margin-bottom:8px" />
+            <div id="username-modal-error" style="display:none;background:#2a0d0d;border:1px solid #f87171;color:#f87171;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:12px"></div>
+            <div id="username-modal-success" style="display:none;background:#0d2a1a;border:1px solid #4ade80;color:#4ade80;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:12px"></div>
+            <div style="display:flex;gap:10px;margin-top:8px">
+                <button onclick="closeEditUsername()" style="flex:1;padding:12px;background:transparent;border:1px solid #2a2a4a;color:#aaa;border-radius:10px;font-size:14px;cursor:pointer">Cancel</button>
+                <button onclick="saveUsername()" id="save-username-btn" style="flex:1;padding:12px;background:#a78bfa;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Save Username</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE ACCOUNT MODAL -->
+    <div id="delete-account-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center">
+        <div style="background:#0d0d1f;border:1px solid #2a2a4a;border-radius:20px;padding:36px 32px;width:420px;max-width:90vw;text-align:center">
+            <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+            <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;color:#f87171">Delete Account</h3>
+            <p style="font-size:13px;color:#888;margin-bottom:8px">This will <strong style="color:#f87171">permanently delete</strong> your account, all your game history, and stats. This cannot be undone.</p>
+            <p style="font-size:13px;color:#555;margin-bottom:20px">Type <strong style="color:white">DELETE</strong> to confirm.</p>
+            <input type="text" id="delete-confirm-input" placeholder='Type "DELETE" here' style="width:100%;padding:13px 16px;background:#0a0a14;border:1px solid #f87171;border-radius:10px;color:white;font-size:15px;outline:none;margin-bottom:16px;text-align:center" />
+            <div id="delete-modal-error" style="display:none;background:#2a0d0d;border:1px solid #f87171;color:#f87171;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:12px"></div>
+            <div style="display:flex;gap:10px">
+                <button onclick="closeDeleteModal()" style="flex:1;padding:12px;background:transparent;border:1px solid #2a2a4a;color:#aaa;border-radius:10px;font-size:14px;cursor:pointer">Cancel</button>
+                <button onclick="executeDeleteAccount()" id="delete-confirm-btn" style="flex:1;padding:12px;background:#f87171;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Delete My Account</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -919,6 +965,118 @@
             `).join('');
         }
         let friendsPanelOpen = false;
+
+        // ── EDIT USERNAME ──
+        function openEditUsername() {
+            var modal = document.getElementById('edit-username-modal');
+            modal.style.display = 'flex';
+            document.getElementById('new-username-input').value = localStorage.getItem('iqUsername') || '';
+            document.getElementById('username-modal-error').style.display = 'none';
+            document.getElementById('username-modal-success').style.display = 'none';
+        }
+
+        function closeEditUsername() {
+            document.getElementById('edit-username-modal').style.display = 'none';
+        }
+
+        function saveUsername() {
+            var newName = document.getElementById('new-username-input').value.trim();
+            var errEl = document.getElementById('username-modal-error');
+            var sucEl = document.getElementById('username-modal-success');
+            errEl.style.display = 'none';
+            sucEl.style.display = 'none';
+
+            if (!newName) { errEl.textContent = 'Please enter a username.'; errEl.style.display = 'block'; return; }
+            if (newName.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; errEl.style.display = 'block'; return; }
+            if (!/^[a-zA-Z0-9_]+$/.test(newName)) { errEl.textContent = 'Only letters, numbers and underscores allowed.'; errEl.style.display = 'block'; return; }
+            if (newName === localStorage.getItem('iqUsername')) { errEl.textContent = 'That is already your username.'; errEl.style.display = 'block'; return; }
+
+            var btn = document.getElementById('save-username-btn');
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+
+            var uid = localStorage.getItem('iqUID');
+
+            // Check uniqueness first
+            db.collection('users').where('username', '==', newName).limit(1).get()
+                .then(function(snap) {
+                    if (!snap.empty) {
+                        errEl.textContent = 'Username "' + newName + '" is already taken.';
+                        errEl.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Save Username';
+                        return;
+                    }
+                    btn.textContent = 'Saving...';
+                    return db.collection('users').doc(uid).update({ username: newName })
+                        .then(function() {
+                            localStorage.setItem('iqUsername', newName);
+                            sucEl.textContent = '✅ Username updated to "' + newName + '"!';
+                            sucEl.style.display = 'block';
+                            btn.textContent = '✅ Saved';
+                            // Update UI
+                            document.getElementById('profile-name').childNodes[0].textContent = newName + ' ';
+                            document.getElementById('big-avatar').textContent = newName[0].toUpperCase();
+                            document.getElementById('nav-username').textContent = newName[0].toUpperCase();
+                            setTimeout(function() { closeEditUsername(); btn.disabled = false; btn.textContent = 'Save Username'; }, 1500);
+                        });
+                })
+                .catch(function(e) {
+                    errEl.textContent = 'Error: ' + e.message;
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Save Username';
+                });
+        }
+
+        // ── DELETE ACCOUNT ──
+        function confirmDeleteAccount() {
+            document.getElementById('delete-account-modal').style.display = 'flex';
+            document.getElementById('delete-confirm-input').value = '';
+            document.getElementById('delete-modal-error').style.display = 'none';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-account-modal').style.display = 'none';
+        }
+
+        function executeDeleteAccount() {
+            var confirm = document.getElementById('delete-confirm-input').value.trim();
+            var errEl = document.getElementById('delete-modal-error');
+            errEl.style.display = 'none';
+
+            if (confirm !== 'DELETE') {
+                errEl.textContent = 'Please type DELETE exactly to confirm.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            var btn = document.getElementById('delete-confirm-btn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+            var uid = localStorage.getItem('iqUID');
+
+            // Delete Firestore user document (history subcollection left for cleanup rules)
+            db.collection('users').doc(uid).delete()
+                .then(function() {
+                    // Delete Firebase Auth account
+                    return auth.currentUser.delete();
+                })
+                .then(function() {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                })
+                .catch(function(e) {
+                    btn.disabled = false;
+                    btn.textContent = 'Delete My Account';
+                    if (e.code === 'auth/requires-recent-login') {
+                        errEl.textContent = 'For security, please log out and log back in before deleting your account.';
+                    } else {
+                        errEl.textContent = 'Error: ' + e.message;
+                    }
+                    errEl.style.display = 'block';
+                });
+        }
 
         function openFriends() {
             var panel = document.getElementById('friends-panel');
