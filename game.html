@@ -781,6 +781,9 @@
                     <div class="waiting-banner" id="waiting-banner" style="display:none">
                         ⏳ Waiting for other players...
                     </div>
+                    <div style="text-align:right;margin-top:8px">
+                        <button onclick="reportQuestion()" id="report-btn" style="background:transparent;border:none;color:#444;font-size:12px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.2s" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#444'">🚩 Report this question</button>
+                    </div>
                 </div>
             </div>
 
@@ -817,6 +820,28 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- REPORT QUESTION MODAL -->
+    <div id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:3000;align-items:center;justify-content:center">
+        <div style="background:#0d0d1f;border:1px solid #2a2a4a;border-radius:20px;padding:32px 28px;width:400px;max-width:90vw">
+            <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">🚩 Report Question</h3>
+            <p style="font-size:12px;color:#555;margin-bottom:16px" id="report-q-preview"></p>
+            <p style="font-size:13px;color:#888;margin-bottom:12px">What's wrong with this question?</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#ccc"><input type="radio" name="report-reason" value="Wrong answer" style="accent-color:#a78bfa"> Wrong answer marked as correct</label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#ccc"><input type="radio" name="report-reason" value="Factually incorrect"> Question is factually incorrect</label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#ccc"><input type="radio" name="report-reason" value="Duplicate question"> Duplicate / repeated question</label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#ccc"><input type="radio" name="report-reason" value="Unclear question"> Question is unclear or confusing</label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#ccc"><input type="radio" name="report-reason" value="Other"> Other</label>
+            </div>
+            <textarea id="report-notes" placeholder="Additional notes (optional)" style="width:100%;padding:10px 14px;background:#0a0a14;border:1px solid #1e1e3a;border-radius:8px;color:#ccc;font-size:13px;resize:vertical;min-height:60px;outline:none;margin-bottom:14px;font-family:inherit"></textarea>
+            <div id="report-msg" style="display:none;font-size:13px;padding:10px;border-radius:8px;margin-bottom:12px"></div>
+            <div style="display:flex;gap:10px">
+                <button onclick="closeReportModal()" style="flex:1;padding:11px;background:transparent;border:1px solid #2a2a4a;color:#aaa;border-radius:10px;font-size:14px;cursor:pointer">Cancel</button>
+                <button onclick="submitReport()" id="submit-report-btn" style="flex:1;padding:11px;background:#f87171;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Report</button>
+            </div>
         </div>
     </div>
 
@@ -1185,6 +1210,14 @@
             // Hide waiting banner
             document.getElementById('waiting-banner').style.display = 'none';
 
+            // Reset report button for new question
+            var rBtn = document.getElementById('report-btn');
+            if (rBtn) {
+                rBtn.style.color = '#444';
+                rBtn.textContent = '🚩 Report this question';
+                rBtn.onclick = reportQuestion;
+            }
+
             // Animate question card
             const card = document.getElementById('question-card');
             card.style.animation = 'none';
@@ -1489,6 +1522,65 @@
                 console.log('Could not save result:', e);
             }
         }
+        // ── REPORT QUESTION ──
+        function reportQuestion() {
+            var q = getQuestion();
+            if (!q) return;
+            document.getElementById('report-q-preview').textContent = '"' + q.question.substring(0, 80) + (q.question.length > 80 ? '...' : '') + '"';
+            document.querySelectorAll('input[name="report-reason"]').forEach(function(r) { r.checked = false; });
+            document.getElementById('report-notes').value = '';
+            document.getElementById('report-msg').style.display = 'none';
+            document.getElementById('submit-report-btn').disabled = false;
+            document.getElementById('submit-report-btn').textContent = 'Submit Report';
+            document.getElementById('report-modal').style.display = 'flex';
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-modal').style.display = 'none';
+        }
+
+        function submitReport() {
+            var reason = document.querySelector('input[name="report-reason"]:checked');
+            var msgEl = document.getElementById('report-msg');
+            if (!reason) {
+                msgEl.textContent = 'Please select a reason.';
+                msgEl.style.cssText = 'display:block;background:#2a0d0d;border:1px solid #f87171;color:#f87171;font-size:13px;padding:10px;border-radius:8px;margin-bottom:12px';
+                return;
+            }
+            var btn = document.getElementById('submit-report-btn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            var q = getQuestion();
+            var uid = localStorage.getItem('iqUID');
+            var notes = document.getElementById('report-notes').value.trim();
+
+            db.collection('questionReports').add({
+                questionId: q.id || null,
+                questionText: q.question,
+                category: q.category || selectedCategory,
+                difficulty: q.difficulty || '',
+                reason: reason.value,
+                notes: notes || '',
+                reportedBy: uid,
+                status: 'pending',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function() {
+                msgEl.textContent = '✅ Report submitted! Our team will review it.';
+                msgEl.style.cssText = 'display:block;background:#0d2a1a;border:1px solid #4ade80;color:#4ade80;font-size:13px;padding:10px;border-radius:8px;margin-bottom:12px';
+                btn.textContent = '✅ Reported';
+                document.getElementById('report-btn').style.color = '#4ade80';
+                document.getElementById('report-btn').textContent = '✅ Reported';
+                document.getElementById('report-btn').onclick = null;
+                setTimeout(closeReportModal, 1800);
+            }).catch(function(e) {
+                btn.disabled = false;
+                btn.textContent = 'Submit Report';
+                msgEl.textContent = 'Error: ' + e.message;
+                msgEl.style.cssText = 'display:block;background:#2a0d0d;border:1px solid #f87171;color:#f87171;font-size:13px;padding:10px;border-radius:8px;margin-bottom:12px';
+            });
+        }
+
         function shareOnWhatsApp(won) {
             var username = localStorage.getItem('iqUsername') || 'I';
             var zone = 'Safety Zone';
