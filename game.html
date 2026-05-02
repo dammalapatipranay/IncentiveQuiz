@@ -571,6 +571,19 @@
         .auth-loading p { font-size: 14px; color: #555; }
         .page-content { display: none; }
 
+        .whatsapp-btn {
+            padding: 12px 24px;
+            background-color: #25D366;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .whatsapp-btn:hover { background-color: #128C7E; transform: translateY(-2px); }
+
         /* ── MOBILE RESPONSIVE ── */
         @media (max-width: 600px) {
             .top-bar {
@@ -688,6 +701,7 @@
         <div class="top-bar">
             <div class="logo">⚡ Incentive<span>Quiz</span></div>
             <div class="player-info">
+                <button onclick="toggleSound()" id="sound-btn" style="background:transparent;border:1px solid #1e1e3a;color:#aaa;border-radius:8px;padding:4px 10px;font-size:15px;cursor:pointer;margin-right:4px" title="Toggle sound">🔊</button>
                 <div class="player-avatar" id="avatar">?</div>
                 <span id="display-name">Player</span>
             </div>
@@ -783,12 +797,8 @@
                         <button class="replay-btn" onclick="rematchGame()">🔄 Rematch</button>
                         <button class="home-btn" onclick="restartGame()">Choose Category</button>
                         <button class="home-btn" onclick="window.location.href='dashboard.html'">Home</button>
+                        <button class="whatsapp-btn" onclick="shareOnWhatsApp(false)">📲 Share on WhatsApp</button>
                     </div>
-                    
-                </div>
-            </div>
-
-            <!-- WIN -->
             <div class="screen" id="screen-win">
                 <div class="win-card">
                     <div style="font-size:72px;margin-bottom:16px">🏆</div>
@@ -802,6 +812,7 @@
                         <button class="replay-btn" onclick="rematchGame()">🔄 Rematch</button>
                         <button class="home-btn" onclick="restartGame()">Choose Category</button>
                         <button class="home-btn" onclick="window.location.href='dashboard.html'">Home</button>
+                        <button class="whatsapp-btn" onclick="shareOnWhatsApp(true)">📲 Share on WhatsApp</button>
                     </div>
                 </div>
             </div>
@@ -810,6 +821,99 @@
     </div>
 
     <script>
+        // ── SOUND ENGINE (Web Audio API — no external files needed) ──
+        var audioCtx = null;
+        var soundEnabled = true;
+
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+
+        function playTone(freq, type, duration, vol, delay) {
+            if (!soundEnabled) return;
+            try {
+                var ctx = getAudioCtx();
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + (delay||0));
+                gain.gain.setValueAtTime(vol || 0.3, ctx.currentTime + (delay||0));
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (delay||0) + duration);
+                osc.start(ctx.currentTime + (delay||0));
+                osc.stop(ctx.currentTime + (delay||0) + duration);
+            } catch(e) {}
+        }
+
+        var sounds = {
+            // Countdown beep — short tick
+            tick: function() { playTone(880, 'square', 0.08, 0.15); },
+
+            // Countdown final beep — lower
+            tickFinal: function() { playTone(440, 'square', 0.2, 0.25); },
+
+            // Answer selected — soft click
+            select: function() { playTone(600, 'sine', 0.08, 0.1); },
+
+            // Correct answer — ascending two-note chime
+            correct: function() {
+                playTone(523, 'sine', 0.15, 0.3, 0);
+                playTone(784, 'sine', 0.2, 0.3, 0.15);
+            },
+
+            // Wrong answer — descending buzz
+            wrong: function() {
+                playTone(300, 'sawtooth', 0.1, 0.3, 0);
+                playTone(200, 'sawtooth', 0.15, 0.3, 0.1);
+            },
+
+            // Timer danger (last 5 seconds) — urgent tick
+            danger: function() { playTone(1000, 'square', 0.06, 0.12); },
+
+            // Time's up — low buzz
+            timeUp: function() {
+                playTone(220, 'sawtooth', 0.15, 0.4, 0);
+                playTone(180, 'sawtooth', 0.2, 0.4, 0.15);
+            },
+
+            // Zone transition — ascending fanfare
+            zoneUp: function() {
+                [523, 659, 784, 1046].forEach(function(f, i) {
+                    playTone(f, 'sine', 0.2, 0.25, i * 0.12);
+                });
+            },
+
+            // Streak — sparkle
+            streak: function() {
+                [1046, 1318, 1568].forEach(function(f, i) {
+                    playTone(f, 'sine', 0.12, 0.2, i * 0.08);
+                });
+            },
+
+            // Eliminated — sad trombone-ish
+            eliminated: function() {
+                [440, 415, 370, 330].forEach(function(f, i) {
+                    playTone(f, 'sawtooth', 0.25, 0.35, i * 0.18);
+                });
+            },
+
+            // Win — triumphant fanfare
+            win: function() {
+                [523,659,784,1046,784,1046,1318].forEach(function(f, i) {
+                    playTone(f, 'sine', 0.22, 0.3, i * 0.13);
+                });
+            },
+
+            // Lifeline used — soft warning chime
+            lifeline: function() {
+                playTone(440, 'sine', 0.15, 0.2, 0);
+                playTone(554, 'sine', 0.15, 0.2, 0.15);
+                playTone(440, 'sine', 0.15, 0.2, 0.3);
+            }
+        };
+
         auth.onAuthStateChanged(function(user) {
             if (!user) {
                 window.location.href = 'login.html';
@@ -911,13 +1015,26 @@
         // ── COUNTDOWN ──
         function startCountdown() {
             showScreen('screen-countdown');
-            let count = 3;
+            var count = 3;
             document.getElementById('countdown-num').textContent = count;
-            const interval = setInterval(() => {
+            sounds.tick();
+            var interval = setInterval(function() {
                 count--;
-                if (count === 0) { clearInterval(interval); startGame(); }
-                else document.getElementById('countdown-num').textContent = count;
+                if (count === 0) {
+                    clearInterval(interval);
+                    sounds.tickFinal();
+                    startGame();
+                } else {
+                    sounds.tick();
+                    document.getElementById('countdown-num').textContent = count;
+                }
             }, 1000);
+        }
+
+        // ── TOGGLE SOUND ──
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
         }
 
         // ── SHUFFLE ──
@@ -988,6 +1105,7 @@
 
         // ── SHOW ZONE TRANSITION BANNER ──
         function showZoneBanner(zoneIndex) {
+            sounds.zoneUp();
             const data = zoneBannerData[zoneIndex];
             if (!data) return;
 
@@ -1109,10 +1227,12 @@
                 if (timeLeft <= 5) {
                     numEl.classList.add('danger');
                     arcEl.classList.add('danger');
+                    sounds.danger();
                 }
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
+                    sounds.timeUp();
                     timeUp();
                 }
             }, 1000);
@@ -1150,10 +1270,12 @@
                     correctStreak++;
                     lifelineActive = false;
                     totalTimeTaken += (Date.now() - questionStartTime) / 1000;
+                    sounds.correct();
                     showStreakIfNeeded();
                     nextQuestion();
                 } else {
                     correctStreak = 0;
+                    sounds.wrong();
                     if (currentQ <= 2) handleSafetyZoneWrong();
                     else showEliminated('Wrong answer!');
                 }
@@ -1164,6 +1286,7 @@
         function selectAnswer(index) {
             if (answered) return;
             answered = true;
+            sounds.select();
 
             const buttons = document.querySelectorAll('.option-btn');
             buttons.forEach(b => b.disabled = true);
@@ -1181,6 +1304,7 @@
                 lifelineUsed   = true;
                 lifelineActive = true;
                 correctStreak  = 0;
+                sounds.lifeline();
                 nextQuestion();
             } else {
                 showEliminated('You already used your lifeline. Eliminated!');
@@ -1190,6 +1314,7 @@
         // ── STREAK ──
         function showStreakIfNeeded() {
             if (correctStreak > 0 && correctStreak % 3 === 0) {
+                sounds.streak();
                 const banner = document.getElementById('streak-banner');
                 banner.textContent = '🔥 ' + correctStreak + ' in a row!';
                 banner.classList.add('show');
@@ -1220,6 +1345,7 @@
         // ── ELIMINATED ──
         function showEliminated(msg) {
             clearInterval(timerInterval);
+            sounds.eliminated();
             saveGameResult(false);
 
             document.getElementById('eliminated-msg').textContent = msg;
@@ -1257,6 +1383,7 @@
         // ── WIN ──
         function showWin() {
             clearInterval(timerInterval);
+            sounds.win();
             saveGameResult(true);
 
             document.getElementById('win-score').textContent = score;
@@ -1362,6 +1489,32 @@
                 console.log('Could not save result:', e);
             }
         }
+        function shareOnWhatsApp(won) {
+            var username = localStorage.getItem('iqUsername') || 'I';
+            var zone = 'Safety Zone';
+            if (currentQ >= 18) zone = 'Sudden Death';
+            else if (currentQ >= 14) zone = 'Expert Zone';
+            else if (currentQ >= 9)  zone = 'Hard Zone';
+            else if (currentQ >= 4)  zone = 'Danger Zone';
+
+            var msg;
+            if (won) {
+                msg = '🏆 ' + username + ' just WON IncentiveQuiz!\n' +
+                    '✅ Answered ' + score + ' questions correctly\n' +
+                    '📚 Category: ' + selectedCategory + '\n' +
+                    '🔥 Survived all zones — Safety → Sudden Death!\n\n' +
+                    'Think you can beat me? Play free at:\nhttps://incentive-quiz.vercel.app';
+            } else {
+                msg = '🎮 ' + username + ' just played IncentiveQuiz!\n' +
+                    '✅ Got ' + score + ' questions correct\n' +
+                    '📚 Category: ' + selectedCategory + '\n' +
+                    '💀 Eliminated in the ' + zone + '\n\n' +
+                    'Think you can do better? Play free at:\nhttps://incentive-quiz.vercel.app';
+            }
+            var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+            window.open(url, '_blank');
+        }
+
         function rematchGame() {
             // Reset all state — startGame() inside startCountdown will reload questions from Firestore
             currentQ       = 0;
