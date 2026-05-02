@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="firebase.js"></script>
     <script src="navbar.js"></script>
     <style>
@@ -1078,6 +1079,39 @@
                 });
         }
 
+        function challengeFriendFromProfile(friendUID, friendName) {
+            var uid = localStorage.getItem('iqUID');
+            var username = localStorage.getItem('iqUsername') || 'Player';
+            var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            var code = '';
+            for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            var roomId = 'PR_' + code;
+
+            firebase.database().ref('rooms/' + roomId).set({
+                category:    'Indian GK',
+                status:      'waiting',
+                hostUID:     uid,
+                playerCount: 1,
+                isPrivate:   true,
+                code:        code,
+                createdAt:   firebase.database.ServerValue.TIMESTAMP
+            }).then(function() {
+                firebase.database().ref('rooms/' + roomId + '/players/' + uid).set({
+                    username: username, alive: true, score: 0, answer: -1, answeredAt: 0
+                });
+                return db.collection('challenges').add({
+                    from: uid, fromName: username,
+                    to: friendUID, toName: friendName,
+                    roomCode: code, category: 'Indian GK',
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }).then(function() {
+                alert('⚔️ Challenge sent to ' + friendName + '!\nThey will see it on their dashboard.\n\nYou will be taken to the game room now.');
+                window.location.href = 'game.html?join=' + code;
+            }).catch(function(e) { alert('Could not send challenge: ' + e.message); });
+        }
+
         function openFriends() {
             var panel = document.getElementById('friends-panel');
             panel.style.display = 'block';
@@ -1114,6 +1148,7 @@
                             '</div>' +
                             '<div style="display:flex;gap:8px">' +
                                 '<button onclick="viewProfile(\'' + f.uid + '\')" style="padding:6px 14px;background:transparent;border:1px solid #2a2a4a;color:#a78bfa;border-radius:6px;font-size:12px;cursor:pointer">View Profile</button>' +
+                                '<button onclick="challengeFriendFromProfile(\'' + f.uid + '\', \'' + (f.username||'').replace(/'/g,'') + '\')" style="padding:6px 14px;background:#a78bfa;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">⚔️ Challenge</button>' +
                                 '<button onclick="removeFriend(\'' + f.uid + '\', \'' + (f.username||'').replace(/'/g, '') + '\')" style="padding:6px 14px;background:transparent;border:1px solid #2a1a1a;color:#f87171;border-radius:6px;font-size:12px;cursor:pointer">Remove</button>' +
                             '</div>' +
                         '</div>';
