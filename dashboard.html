@@ -522,6 +522,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="firebase.js"></script>
     <script src="navbar.js"></script>
 
@@ -536,6 +537,8 @@
     </nav>
 
     <div class="main">
+
+        <div id="challenge-banner" style="display:none;background:#1a1030;border:1px solid #a78bfa;border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:14px;color:#ccc;display:none;align-items:center;flex-wrap:wrap;gap:8px"></div>
 
         <div class="welcome-banner">
             <div class="welcome-left">
@@ -666,6 +669,7 @@
 
                 loadHistory(user.uid);
                 loadLeaderboard();
+                checkIncomingChallenges(user.uid);
             }).catch(function(e) {
                 console.log('Error loading user data:', e);
                 document.getElementById('welcome-name').textContent = 'Player';
@@ -677,6 +681,34 @@
                 loadLeaderboard();
             });
         });
+
+        function checkIncomingChallenges(uid) {
+            db.collection('challenges')
+                .where('to', '==', uid)
+                .where('status', '==', 'pending')
+                .get().then(function(snap) {
+                    if (snap.empty) return;
+                    var c = snap.docs[0].data();
+                    var docId = snap.docs[0].id;
+                    var banner = document.getElementById('challenge-banner');
+                    if (banner) {
+                        banner.style.display = 'flex';
+                        banner.innerHTML = '⚔️ <strong style="color:#a78bfa">' + c.fromName + '</strong> challenged you to a <strong>' + c.category + '</strong> quiz! ' +
+                            '<button onclick="acceptChallenge(\'' + c.roomCode + '\', \'' + docId + '\')" style="padding:7px 16px;background:#a78bfa;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Accept ⚡</button>' +
+                            '<button onclick="declineChallenge(\'' + docId + '\')" style="padding:7px 12px;background:transparent;border:1px solid #2a2a4a;color:#666;border-radius:8px;font-size:13px;cursor:pointer">Decline</button>';
+                    }
+                }).catch(function() {});
+        }
+
+        function acceptChallenge(code, docId) {
+            db.collection('challenges').doc(docId).update({ status: 'accepted' });
+            window.location.href = 'game.html?join=' + code;
+        }
+
+        function declineChallenge(docId) {
+            db.collection('challenges').doc(docId).update({ status: 'declined' });
+            document.getElementById('challenge-banner').style.display = 'none';
+        }
 
         function loadHistory(uid) {
             var el = document.getElementById('recent-list');
