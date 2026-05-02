@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="firebase.js"></script>
     <style>
         * {
@@ -677,6 +678,33 @@
                 padding: 10px 14px;
             }
         }
+
+        .player-slot {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 2px dashed #2a2a4a;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #333;
+            transition: all 0.3s; background: #0d0d1f;
+            margin: 3px;
+        }
+        .player-slot.filled {
+            border: 2px solid #a78bfa;
+            background: linear-gradient(135deg,#a78bfa,#7c3aed);
+            color: white; animation: popIn 0.3s ease-out;
+        }
+        .player-slot.you { border: 2px solid #4ade80 !important; background: linear-gradient(135deg,#4ade80,#16a34a) !important; }
+        @keyframes popIn {
+            0%  { transform:scale(0.5); opacity:0; }
+            70% { transform:scale(1.15); }
+            100%{ transform:scale(1); opacity:1; }
+        }
+        .mp-alive-row {
+            display:flex; align-items:center; gap:8px; padding:6px 0;
+            border-bottom:1px solid #1a1a2e; font-size:13px; color:#ccc;
+        }
+        .mp-alive-row.elim { opacity:0.35; }
+        .mp-alive-dot { width:8px; height:8px; border-radius:50%; background:#4ade80; flex-shrink:0; }
+        .mp-alive-dot.dead { background:#f87171; }
     </style>
 </head>
 <body>
@@ -727,7 +755,57 @@
                         <button class="cat-btn" onclick="selectCat(this)">⚽ Sports</button>
                         <button class="cat-btn" onclick="selectCat(this)">🎭 OTT and Web Series</button>
                     </div>
-                    <button class="start-btn" onclick="startCountdown()">Find Match ⚡</button>
+                    <button class="start-btn" onclick="findMatch()">Find Match ⚡</button>
+                    <button class="start-btn" style="background:transparent;border:1px solid #a78bfa;color:#a78bfa;margin-top:10px" onclick="showPrivateRoom()">🔒 Private Room</button>
+                </div>
+            </div>
+
+            <!-- MATCHMAKING -->
+            <div class="screen" id="screen-matchmaking">
+                <div class="lobby-card" style="text-align:center">
+                    <div style="font-size:48px;margin-bottom:16px">🔍</div>
+                    <h2 style="margin-bottom:8px">Finding Players...</h2>
+                    <p style="color:#555;margin-bottom:24px">Category: <span id="mm-category" style="color:#a78bfa;font-weight:600"></span></p>
+                    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:24px;flex-wrap:wrap" id="mm-player-slots">
+                        <!-- filled dynamically -->
+                    </div>
+                    <div style="font-size:14px;color:#555;margin-bottom:6px"><span id="mm-count">0</span> / <span id="mm-max">10</span> players joined</div>
+                    <div style="font-size:13px;color:#444;margin-bottom:24px" id="mm-status">Waiting for players...</div>
+                    <div style="width:100%;height:4px;background:#1e1e3a;border-radius:4px;overflow:hidden;margin-bottom:24px">
+                        <div id="mm-timer-bar" style="height:100%;background:#a78bfa;width:100%;transition:width 1s linear"></div>
+                    </div>
+                    <button onclick="cancelMatchmaking()" style="padding:10px 28px;background:transparent;border:1px solid #2a2a4a;color:#666;border-radius:10px;font-size:14px;cursor:pointer">Cancel</button>
+                </div>
+            </div>
+
+            <!-- PRIVATE ROOM -->
+            <div class="screen" id="screen-private">
+                <div class="lobby-card" style="text-align:center">
+                    <div style="font-size:42px;margin-bottom:12px">🔒</div>
+                    <h2 style="margin-bottom:8px">Private Room</h2>
+                    <p style="color:#555;font-size:14px;margin-bottom:24px">Create a room and share the code with friends</p>
+
+                    <div id="private-create-section">
+                        <p style="font-size:13px;color:#666;margin-bottom:8px">Category selected: <span id="pr-category" style="color:#a78bfa;font-weight:600"></span></p>
+                        <button onclick="createPrivateRoom()" class="start-btn" style="margin-bottom:16px">Create Room</button>
+                        <div style="color:#444;font-size:13px;margin-bottom:12px">— or join with a code —</div>
+                        <input id="join-code-input" placeholder="Enter room code" style="width:200px;padding:12px 16px;background:#0a0a14;border:1px solid #1e1e3a;border-radius:10px;color:white;font-size:16px;outline:none;text-align:center;letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:10px" maxlength="6" oninput="this.value=this.value.toUpperCase()" />
+                        <br>
+                        <button onclick="joinPrivateRoom()" class="start-btn" style="background:transparent;border:1px solid #a78bfa;color:#a78bfa">Join Room</button>
+                    </div>
+
+                    <div id="private-waiting-section" style="display:none">
+                        <div style="font-size:28px;font-weight:800;letter-spacing:8px;color:#a78bfa;background:#1a1a2e;border-radius:12px;padding:16px 24px;margin-bottom:16px;display:inline-block" id="room-code-display">------</div>
+                        <p style="font-size:13px;color:#555;margin-bottom:20px">Share this code with friends to join</p>
+                        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="pr-player-slots"></div>
+                        <div style="font-size:13px;color:#555;margin-bottom:16px"><span id="pr-count">1</span> player(s) in room</div>
+                        <button id="pr-start-btn" onclick="startPrivateGame()" class="start-btn" style="display:none;margin-bottom:10px">Start Game ⚡</button>
+                        <button onclick="cancelPrivateRoom()" style="padding:10px 28px;background:transparent;border:1px solid #2a2a4a;color:#666;border-radius:10px;font-size:14px;cursor:pointer">Leave Room</button>
+                    </div>
+
+                    <div style="margin-top:16px">
+                        <button onclick="showScreen('screen-lobby')" style="padding:8px 20px;background:transparent;border:none;color:#444;font-size:13px;cursor:pointer">← Back to Lobby</button>
+                    </div>
                 </div>
             </div>
 
@@ -847,6 +925,596 @@
 
     <script>
         // ── SOUND ENGINE (Web Audio API — no external files needed) ──
+        // ── MULTIPLAYER STATE ──
+        var currentRoomId   = null;
+        var isHost          = false;
+        var isMultiplayer   = false;
+        var mmTimerInterval = null;
+        var roomRef         = null;
+        var playersRef      = null;
+        var myPlayerRef     = null;
+        var roomListener    = null;
+        var MAX_WAIT_SECS   = 20;
+        var MIN_PLAYERS     = 2;
+        var MAX_PLAYERS     = 10;
+
+        // ── FIND PUBLIC MATCH ──
+        function findMatch() {
+            selectedCategory = getCurrentCategory();
+            isMultiplayer = true;
+            isHost = false;
+
+            document.getElementById('mm-category').textContent = selectedCategory;
+            showScreen('screen-matchmaking');
+            renderSlots('mm-player-slots', 0, MAX_PLAYERS);
+            document.getElementById('mm-count').textContent = '0';
+            document.getElementById('mm-status').textContent = 'Looking for a room...';
+
+            // Look for an open room in same category
+            rtdb.ref('rooms').orderByChild('category').equalTo(selectedCategory)
+                .once('value').then(function(snap) {
+                    var openRoom = null;
+                    if (snap.exists()) {
+                        snap.forEach(function(child) {
+                            var r = child.val();
+                            if (r.status === 'waiting' && r.playerCount < MAX_PLAYERS) {
+                                openRoom = { id: child.key, data: r };
+                            }
+                        });
+                    }
+                    if (openRoom) {
+                        joinRoom(openRoom.id);
+                    } else {
+                        createPublicRoom();
+                    }
+                }).catch(function() { createPublicRoom(); });
+        }
+
+        function getCurrentCategory() {
+            var selected = document.querySelector('.cat-btn.selected');
+            return selected ? (categoryMap[selected.textContent.trim()] || selected.textContent.trim()) : selectedCategory;
+        }
+
+        // ── CREATE PUBLIC ROOM ──
+        function createPublicRoom() {
+            isHost = true;
+            var uid = localStorage.getItem('iqUID');
+            var username = localStorage.getItem('iqUsername') || 'Player';
+
+            var roomData = {
+                category:    selectedCategory,
+                status:      'waiting',
+                hostUID:     uid,
+                playerCount: 1,
+                createdAt:   firebase.database.ServerValue.TIMESTAMP,
+                isPrivate:   false
+            };
+
+            var newRoom = rtdb.ref('rooms').push();
+            currentRoomId = newRoom.key;
+            roomRef = rtdb.ref('rooms/' + currentRoomId);
+            playersRef = rtdb.ref('rooms/' + currentRoomId + '/players');
+            myPlayerRef = playersRef.child(uid);
+
+            newRoom.set(roomData).then(function() {
+                myPlayerRef.set({ username: username, alive: true, score: 0, answer: -1, answeredAt: 0 });
+                myPlayerRef.onDisconnect().remove();
+                listenToRoom();
+                startMMTimer();
+            });
+        }
+
+        // ── JOIN EXISTING ROOM ──
+        function joinRoom(roomId) {
+            var uid = localStorage.getItem('iqUID');
+            var username = localStorage.getItem('iqUsername') || 'Player';
+
+            currentRoomId = roomId;
+            roomRef = rtdb.ref('rooms/' + roomId);
+            playersRef = rtdb.ref('rooms/' + roomId + '/players');
+            myPlayerRef = playersRef.child(uid);
+
+            myPlayerRef.set({ username: username, alive: true, score: 0, answer: -1, answeredAt: 0 });
+            myPlayerRef.onDisconnect().remove();
+
+            // Increment player count
+            roomRef.child('playerCount').transaction(function(count) { return (count || 0) + 1; });
+            listenToRoom();
+        }
+
+        // ── LISTEN TO ROOM (real-time) ──
+        function listenToRoom() {
+            if (roomListener) roomRef.off('value', roomListener);
+
+            roomListener = roomRef.on('value', function(snap) {
+                if (!snap.exists()) { cancelMatchmaking(); return; }
+                var room = snap.val();
+                var players = room.players || {};
+                var playerList = Object.values(players);
+                var count = playerList.length;
+
+                // Update matchmaking UI
+                document.getElementById('mm-count').textContent = count;
+                renderSlots('mm-player-slots', count, MAX_PLAYERS, playerList);
+
+                if (room.status === 'playing') {
+                    // Room started — load questions and go
+                    clearInterval(mmTimerInterval);
+                    loadMultiplayerGame(room);
+                    return;
+                }
+
+                if (room.status === 'waiting') {
+                    document.getElementById('mm-status').textContent =
+                        count >= MIN_PLAYERS
+                            ? '✅ ' + count + ' players ready! Starting soon...'
+                            : 'Waiting for at least ' + MIN_PLAYERS + ' players...';
+                }
+            });
+        }
+
+        // ── MATCHMAKING TIMER ──
+        function startMMTimer() {
+            var secs = MAX_WAIT_SECS;
+            var bar = document.getElementById('mm-timer-bar');
+            clearInterval(mmTimerInterval);
+
+            mmTimerInterval = setInterval(function() {
+                secs--;
+                if (bar) bar.style.width = (secs / MAX_WAIT_SECS * 100) + '%';
+
+                // Check current players
+                playersRef.once('value').then(function(snap) {
+                    var count = snap.numChildren();
+                    document.getElementById('mm-count').textContent = count;
+
+                    if (secs <= 0 || count >= MAX_PLAYERS) {
+                        clearInterval(mmTimerInterval);
+                        if (count >= MIN_PLAYERS) {
+                            kickOffGame();
+                        } else {
+                            // Not enough players — start solo with bots
+                            document.getElementById('mm-status').textContent = 'Not enough players. Starting with bots...';
+                            setTimeout(function() {
+                                cleanupRoom();
+                                isMultiplayer = false;
+                                startCountdown();
+                            }, 1500);
+                        }
+                    }
+                });
+            }, 1000);
+        }
+
+        // ── HOST KICKS OFF GAME ──
+        function kickOffGame() {
+            if (!isHost) return;
+            // Load question IDs then set status to playing
+            db.collection('questions').where('category', '==', selectedCategory).get()
+                .then(function(snap) {
+                    var ids = snap.docs.map(function(d) { return d.id; });
+                    // Shuffle deterministically using room seed
+                    ids = shuffleWithSeed(ids, currentRoomId);
+                    return roomRef.update({
+                        status:      'playing',
+                        questionIds:  ids.slice(0, 50),
+                        startedAt:    firebase.database.ServerValue.TIMESTAMP,
+                        currentQ:     0,
+                        timerEnd:     firebase.database.ServerValue.TIMESTAMP
+                    });
+                }).catch(function() {
+                    roomRef.update({ status: 'playing', currentQ: 0 });
+                });
+        }
+
+        // ── SHUFFLE WITH SEED (deterministic so all players get same order) ──
+        function shuffleWithSeed(arr, seed) {
+            var s = 0;
+            for (var i = 0; i < seed.length; i++) s += seed.charCodeAt(i);
+            var a = arr.slice();
+            for (var i = a.length - 1; i > 0; i--) {
+                s = (s * 9301 + 49297) % 233280;
+                var j = Math.floor((s / 233280) * (i + 1));
+                var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+            }
+            return a;
+        }
+
+        // ── LOAD MULTIPLAYER GAME ──
+        function loadMultiplayerGame(room) {
+            clearInterval(mmTimerInterval);
+            // Reset local game state
+            currentQ = 0; score = 0; correctStreak = 0;
+            lifelineUsed = false; lifelineActive = false;
+            previousZone = -1; totalTimeTaken = 0;
+            gameStartTime = Date.now();
+
+            // If room has question IDs, load those specific questions
+            if (room.questionIds && room.questionIds.length > 0) {
+                loadQuestionsById(room.questionIds).then(function() {
+                    startMultiplayerRound();
+                });
+            } else {
+                startGame();
+                isMultiplayer = true;
+            }
+
+            // Listen to player eliminations for live scoreboard
+            listenToPlayers();
+        }
+
+        function loadQuestionsById(ids) {
+            // Split into batches of 10 (Firestore limit)
+            var batches = [];
+            for (var i = 0; i < Math.min(ids.length, 50); i += 10) {
+                batches.push(ids.slice(i, i + 10));
+            }
+            var allDocs = [];
+            return batches.reduce(function(chain, batch) {
+                return chain.then(function() {
+                    return db.collection('questions').where(firebase.firestore.FieldPath.documentId(), 'in', batch).get()
+                        .then(function(snap) {
+                            snap.docs.forEach(function(d) { allDocs.push(Object.assign({ id: d.id }, d.data())); });
+                        });
+                });
+            }, Promise.resolve()).then(function() {
+                easyQuestions   = allDocs.filter(function(q) { return q.difficulty === 'easy'; });
+                mediumQuestions = allDocs.filter(function(q) { return q.difficulty === 'medium'; });
+                hardQuestions   = allDocs.filter(function(q) { return q.difficulty === 'hard'; });
+                if (!easyQuestions.length && !mediumQuestions.length && !hardQuestions.length) {
+                    easyQuestions = mediumQuestions = hardQuestions = allDocs;
+                }
+            });
+        }
+
+        function startMultiplayerRound() {
+            showScreen('screen-countdown');
+            var count = 3;
+            document.getElementById('countdown-num').textContent = count;
+            sounds.tick();
+            var cd = setInterval(function() {
+                count--;
+                if (count === 0) { clearInterval(cd); sounds.tickFinal(); loadQuestion(); showScreen('screen-quiz'); }
+                else { sounds.tick(); document.getElementById('countdown-num').textContent = count; }
+            }, 1000);
+        }
+
+        // ── LISTEN TO LIVE PLAYER LIST ──
+        var playersListener = null;
+        function listenToPlayers() {
+            if (!playersRef) return;
+            if (playersListener) playersRef.off('value', playersListener);
+            playersListener = playersRef.on('value', function(snap) {
+                if (!snap.exists()) return;
+                var players = snap.val();
+                var alive = Object.values(players).filter(function(p) { return p.alive; }).length;
+                playersAlive = alive;
+                document.getElementById('alive-count').textContent = alive;
+                updateMPScoreboard(players);
+            });
+        }
+
+        function updateMPScoreboard(players) {
+            var myUID = localStorage.getItem('iqUID');
+            var list = Object.entries(players).map(function(e) {
+                return Object.assign({ uid: e[0] }, e[1]);
+            }).sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+
+            var el = document.getElementById('mp-scoreboard');
+            if (!el) return;
+            el.innerHTML = list.map(function(p) {
+                var isMe = p.uid === myUID;
+                return '<div class="mp-alive-row' + (p.alive ? '' : ' elim') + '">' +
+                    '<div class="mp-alive-dot' + (p.alive ? '' : ' dead') + '"></div>' +
+                    '<span style="flex:1;font-weight:' + (isMe ? '700' : '400') + ';color:' + (isMe ? '#a78bfa' : '#ccc') + '">' +
+                        (p.username || 'Player') + (isMe ? ' (You)' : '') +
+                    '</span>' +
+                    '<span style="color:#a78bfa;font-size:12px">' + (p.score || 0) + ' pts</span>' +
+                '</div>';
+            }).join('');
+        }
+
+        // ── SYNC ANSWER TO RTDB ──
+        function syncAnswerToRoom(answerIndex, correct) {
+            if (!isMultiplayer || !myPlayerRef) return;
+            var uid = localStorage.getItem('iqUID');
+            myPlayerRef.update({
+                answer:      answerIndex,
+                answeredAt:  firebase.database.ServerValue.TIMESTAMP,
+                score:       score,
+                alive:       true
+            });
+        }
+
+        // ── SYNC ELIMINATION TO RTDB ──
+        function syncEliminatedToRoom() {
+            if (!isMultiplayer || !myPlayerRef) return;
+            myPlayerRef.update({ alive: false, score: score });
+        }
+
+        // ── CLEANUP ROOM ON EXIT ──
+        function cleanupRoom() {
+            if (roomListener && roomRef) { roomRef.off('value', roomListener); roomListener = null; }
+            if (playersListener && playersRef) { playersRef.off('value', playersListener); playersListener = null; }
+            if (myPlayerRef) myPlayerRef.remove();
+            currentRoomId = null; roomRef = null; playersRef = null; myPlayerRef = null;
+            isMultiplayer = false; isHost = false;
+        }
+
+        function cancelMatchmaking() {
+            clearInterval(mmTimerInterval);
+            cleanupRoom();
+            showScreen('screen-lobby');
+        }
+
+        // ── PRIVATE ROOM ──
+        function showPrivateRoom() {
+            selectedCategory = getCurrentCategory();
+            document.getElementById('pr-category').textContent = selectedCategory;
+            document.getElementById('private-create-section').style.display = 'block';
+            document.getElementById('private-waiting-section').style.display = 'none';
+            showScreen('screen-private');
+        }
+
+        function generateRoomCode() {
+            var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            var code = '';
+            for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            return code;
+        }
+
+        function createPrivateRoom() {
+            isHost = true;
+            isMultiplayer = true;
+            var uid = localStorage.getItem('iqUID');
+            var username = localStorage.getItem('iqUsername') || 'Player';
+            var code = generateRoomCode();
+
+            var roomData = {
+                category:    selectedCategory,
+                status:      'waiting',
+                hostUID:     uid,
+                playerCount: 1,
+                createdAt:   firebase.database.ServerValue.TIMESTAMP,
+                isPrivate:   true,
+                code:        code
+            };
+
+            // Use code as the room ID for private rooms
+            currentRoomId = 'PR_' + code;
+            roomRef    = rtdb.ref('rooms/' + currentRoomId);
+            playersRef = rtdb.ref('rooms/' + currentRoomId + '/players');
+            myPlayerRef = playersRef.child(uid);
+
+            roomRef.set(roomData).then(function() {
+                myPlayerRef.set({ username: username, alive: true, score: 0, answer: -1, answeredAt: 0 });
+                myPlayerRef.onDisconnect().remove();
+                document.getElementById('room-code-display').textContent = code;
+                document.getElementById('private-create-section').style.display = 'none';
+                document.getElementById('private-waiting-section').style.display = 'block';
+                renderSlots('pr-player-slots', 1, MAX_PLAYERS, [{ username: username }]);
+                document.getElementById('pr-count').textContent = '1';
+                listenToPrivateRoom();
+            });
+        }
+
+        function listenToPrivateRoom() {
+            roomRef.on('value', function(snap) {
+                if (!snap.exists()) return;
+                var room = snap.val();
+                var players = room.players || {};
+                var playerList = Object.values(players);
+                var count = playerList.length;
+
+                document.getElementById('pr-count').textContent = count;
+                renderSlots('pr-player-slots', count, MAX_PLAYERS, playerList);
+
+                var startBtn = document.getElementById('pr-start-btn');
+                if (isHost && count >= MIN_PLAYERS) {
+                    startBtn.style.display = 'inline-block';
+                } else {
+                    startBtn.style.display = 'none';
+                }
+
+                if (room.status === 'playing') {
+                    loadMultiplayerGame(room);
+                }
+            });
+        }
+
+        function joinPrivateRoom() {
+            var code = document.getElementById('join-code-input').value.trim().toUpperCase();
+            if (code.length !== 6) { alert('Please enter a valid 6-character room code.'); return; }
+
+            var roomId = 'PR_' + code;
+            rtdb.ref('rooms/' + roomId).once('value').then(function(snap) {
+                if (!snap.exists()) { alert('Room not found. Check the code and try again.'); return; }
+                var room = snap.val();
+                if (room.status !== 'waiting') { alert('This room has already started.'); return; }
+                if (Object.keys(room.players || {}).length >= MAX_PLAYERS) { alert('Room is full!'); return; }
+
+                selectedCategory = room.category;
+                isMultiplayer = true;
+                isHost = false;
+                currentRoomId = roomId;
+                roomRef    = rtdb.ref('rooms/' + roomId);
+                playersRef = rtdb.ref('rooms/' + roomId + '/players');
+                var uid = localStorage.getItem('iqUID');
+                var username = localStorage.getItem('iqUsername') || 'Player';
+                myPlayerRef = playersRef.child(uid);
+                myPlayerRef.set({ username: username, alive: true, score: 0, answer: -1, answeredAt: 0 });
+                myPlayerRef.onDisconnect().remove();
+                roomRef.child('playerCount').transaction(function(c) { return (c || 0) + 1; });
+
+                document.getElementById('room-code-display').textContent = code;
+                document.getElementById('private-create-section').style.display = 'none';
+                document.getElementById('private-waiting-section').style.display = 'block';
+                document.getElementById('pr-start-btn').style.display = 'none';
+                listenToPrivateRoom();
+            }).catch(function() { alert('Could not connect. Please try again.'); });
+        }
+
+        function startPrivateGame() {
+            if (!isHost) return;
+            kickOffGame();
+        }
+
+        function cancelPrivateRoom() {
+            cleanupRoom();
+            showScreen('screen-lobby');
+        }
+
+        // ── RENDER PLAYER SLOTS ──
+        function renderSlots(containerId, filled, max, players) {
+            var el = document.getElementById(containerId);
+            if (!el) return;
+            var myUID = localStorage.getItem('iqUID');
+            var html = '';
+            for (var i = 0; i < max; i++) {
+                if (players && i < players.length) {
+                    var p = players[i];
+                    var isMe = p.uid === myUID;
+                    html += '<div class="player-slot filled' + (isMe ? ' you' : '') + '" title="' + (p.username || 'Player') + '">' +
+                        (p.username || 'P')[0].toUpperCase() + '</div>';
+                } else {
+                    html += '<div class="player-slot"></div>';
+                }
+            }
+            el.innerHTML = html;
+        }
+
+        // ── CHALLENGE A FRIEND ──
+        function challengeFriend(friendUID, friendName) {
+            selectedCategory = getCurrentCategory();
+            isHost = true;
+            isMultiplayer = true;
+            var uid = localStorage.getItem('iqUID');
+            var username = localStorage.getItem('iqUsername') || 'Player';
+            var code = generateRoomCode();
+            var roomId = 'PR_' + code;
+
+            currentRoomId = roomId;
+            roomRef    = rtdb.ref('rooms/' + roomId);
+            playersRef = rtdb.ref('rooms/' + roomId + '/players');
+            myPlayerRef = playersRef.child(uid);
+
+            roomRef.set({
+                category:    selectedCategory,
+                status:      'waiting',
+                hostUID:     uid,
+                playerCount: 1,
+                isPrivate:   true,
+                code:        code,
+                createdAt:   firebase.database.ServerValue.TIMESTAMP
+            }).then(function() {
+                myPlayerRef.set({ username: username, alive: true, score: 0, answer: -1, answeredAt: 0 });
+                myPlayerRef.onDisconnect().remove();
+
+                // Save challenge notification to Firestore for the friend
+                return db.collection('challenges').add({
+                    from:       uid,
+                    fromName:   username,
+                    to:         friendUID,
+                    toName:     friendName,
+                    roomCode:   code,
+                    category:   selectedCategory,
+                    status:     'pending',
+                    createdAt:  firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }).then(function() {
+                // Show the private room waiting screen
+                document.getElementById('room-code-display').textContent = code;
+                document.getElementById('private-create-section').style.display = 'none';
+                document.getElementById('private-waiting-section').style.display = 'block';
+                document.getElementById('pr-start-btn').style.display = 'none';
+                document.getElementById('pr-count').textContent = '1';
+                renderSlots('pr-player-slots', 1, MAX_PLAYERS, [{ username: username, uid: uid }]);
+                window.location.href = 'game.html'; // navigate to game page if not already there
+                listenToPrivateRoom();
+            }).catch(function(e) { alert('Could not create challenge: ' + e.message); });
+        }
+
+        // ── MULTIPLAYER SCOREBOARD (shown during quiz) ──
+        function injectMPScoreboard() {
+            if (!isMultiplayer) return;
+            if (document.getElementById('mp-scoreboard')) return;
+            var el = document.createElement('div');
+            el.id = 'mp-scoreboard';
+            el.style.cssText = 'background:#0d0d1f;border:1px solid #1e1e3a;border-radius:12px;padding:12px 16px;margin-top:12px;max-height:180px;overflow-y:auto';
+            var quiz = document.getElementById('screen-quiz');
+            if (quiz) quiz.appendChild(el);
+        }
+
+        // ── OVERRIDE selectAnswer FOR MULTIPLAYER ──
+        var _origSelectAnswer = selectAnswer;
+
+        // ── OVERRIDE showEliminated FOR MULTIPLAYER ──
+        var _origShowEliminated = showEliminated;
+
+        // ── OVERRIDE showWin FOR MULTIPLAYER ──
+        var _origShowWin = showWin;
+
+        // ── MULTIPLAYER HOOKS (applied after game starts) ──
+        function applyMultiplayerHooks() {
+            if (!isMultiplayer) return;
+            injectMPScoreboard();
+        }
+
+        // ── FRIEND CHALLENGES ON DASHBOARD ──
+        function checkIncomingChallenges(uid) {
+            db.collection('challenges')
+                .where('to', '==', uid)
+                .where('status', '==', 'pending')
+                .get().then(function(snap) {
+                    if (snap.empty) return;
+                    var c = snap.docs[0].data();
+                    var docId = snap.docs[0].id;
+                    var banner = document.getElementById('challenge-banner');
+                    if (banner) {
+                        banner.style.display = 'block';
+                        banner.innerHTML = '⚔️ <strong>' + c.fromName + '</strong> challenged you to a <strong>' + c.category + '</strong> quiz! ' +
+                            '<button onclick="acceptChallenge(\'' + c.roomCode + '\', \'' + docId + '\')" style="padding:6px 14px;background:#a78bfa;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;margin-left:10px">Accept ⚡</button>' +
+                            '<button onclick="declineChallenge(\'' + docId + '\')" style="padding:6px 12px;background:transparent;border:1px solid #2a2a4a;color:#666;border-radius:8px;font-size:13px;cursor:pointer;margin-left:6px">Decline</button>';
+                    }
+                }).catch(function() {});
+        }
+
+        function acceptChallenge(code, docId) {
+            db.collection('challenges').doc(docId).update({ status: 'accepted' });
+            // Store code and redirect to game
+            localStorage.setItem('iqJoinCode', code);
+            window.location.href = 'game.html?join=' + code;
+        }
+
+        function declineChallenge(docId) {
+            db.collection('challenges').doc(docId).update({ status: 'declined' });
+            var banner = document.getElementById('challenge-banner');
+            if (banner) banner.style.display = 'none';
+        }
+
+        // ── AUTO-JOIN FROM URL PARAM ──
+        function checkAutoJoin() {
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('join') || localStorage.getItem('iqJoinCode');
+            if (code) {
+                localStorage.removeItem('iqJoinCode');
+                document.getElementById('join-code-input') && (document.getElementById('join-code-input').value = code);
+                showPrivateRoom();
+                setTimeout(function() { joinPrivateRoom(); }, 500);
+            }
+        }
+
+        // ── CALL AFTER AUTH ──
+        function onGameReady() {
+            checkAutoJoin();
+        }
+
+        // ── SYNC SCORE EVERY CORRECT ANSWER ──
+        function syncScoreToRoom() {
+            if (!isMultiplayer || !myPlayerRef) return;
+            myPlayerRef.update({ score: score });
+        }
+
         var audioCtx = null;
         var soundEnabled = true;
 
@@ -964,6 +1632,7 @@
                 var content = document.getElementById('page-content');
                 if (loader) loader.style.display = 'none';
                 if (content) content.style.display = 'block';
+                onGameReady();
             });
         });
         // ── FALLBACK QUESTIONS ──
@@ -1230,7 +1899,7 @@
             document.getElementById('alive-count').textContent = playersAlive;
 
             startTimer(zone.time);
-        }
+            applyMultiplayerHooks();
 
         // ── CIRCULAR TIMER ── 
         function startTimer(seconds) {
@@ -1304,6 +1973,7 @@
                     lifelineActive = false;
                     totalTimeTaken += (Date.now() - questionStartTime) / 1000;
                     sounds.correct();
+                    syncScoreToRoom();
                     showStreakIfNeeded();
                     nextQuestion();
                 } else {
@@ -1379,6 +2049,7 @@
         function showEliminated(msg) {
             clearInterval(timerInterval);
             sounds.eliminated();
+            syncEliminatedToRoom();
             saveGameResult(false);
 
             document.getElementById('eliminated-msg').textContent = msg;
@@ -1417,6 +2088,7 @@
         function showWin() {
             clearInterval(timerInterval);
             sounds.win();
+            if (isMultiplayer && myPlayerRef) myPlayerRef.update({ score: score, alive: true });
             saveGameResult(true);
 
             document.getElementById('win-score').textContent = score;
@@ -1608,24 +2280,17 @@
         }
 
         function rematchGame() {
-            // Reset all state — startGame() inside startCountdown will reload questions from Firestore
-            currentQ       = 0;
-            score          = 0;
-            correctStreak  = 0;
-            playersAlive   = 10;
-            lifelineUsed   = false;
-            lifelineActive = false;
-            previousZone   = -1;
-            totalTimeTaken = 0;
-            gameStartTime  = Date.now();
-            easyQuestions   = [];
-            mediumQuestions = [];
-            hardQuestions   = [];
+            cleanupRoom();
+            currentQ = 0; score = 0; correctStreak = 0;
+            playersAlive = 10; lifelineUsed = false; lifelineActive = false;
+            previousZone = -1; totalTimeTaken = 0; gameStartTime = Date.now();
+            easyQuestions = []; mediumQuestions = []; hardQuestions = [];
             clearInterval(timerInterval);
             startCountdown();
         }
 
         function restartGame() {
+            cleanupRoom();
             showScreen('screen-lobby');
         }
 
