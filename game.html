@@ -1030,15 +1030,35 @@
                 if (!snap.exists()) { cancelMatchmaking(); return; }
                 var room = snap.val();
                 var players = room.players || {};
-                var playerList = Object.values(players);
+                var playerList = Object.entries(players).map(function(e) {
+                    return Object.assign({ uid: e[0] }, e[1]);
+                });
                 var count = playerList.length;
+                var myUID = localStorage.getItem('iqUID');
+
+                // ── HOST MIGRATION ──
+                // If host left and I'm the next player alphabetically, take over
+                if (room.status === 'waiting' && count > 0) {
+                    var hostStillPresent = players[room.hostUID] !== undefined;
+                    if (!hostStillPresent) {
+                        // Promote the first remaining player as new host
+                        var sortedUIDs = Object.keys(players).sort();
+                        var newHostUID = sortedUIDs[0];
+                        if (newHostUID === myUID) {
+                            isHost = true;
+                            roomRef.update({ hostUID: myUID });
+                            // Restart the matchmaking timer as new host
+                            clearInterval(mmTimerInterval);
+                            startMMTimer();
+                        }
+                    }
+                }
 
                 // Update matchmaking UI
                 document.getElementById('mm-count').textContent = count;
                 renderSlots('mm-player-slots', count, MAX_PLAYERS, playerList);
 
                 if (room.status === 'playing') {
-                    // Room started — load questions and go
                     clearInterval(mmTimerInterval);
                     loadMultiplayerGame(room);
                     return;
@@ -1214,31 +1234,57 @@
             }).join('');
         }
 
-        // ── SYNC ANSWER TO RTDB ──
-        function syncAnswerToRoom(answerIndex, correct) {
+        // ── SYNC STATUS TO RTDB (alive/eliminated only — answer is private) ──
+        function syncStatusToRoom(alive) {
             if (!isMultiplayer || !myPlayerRef) return;
-            var uid = localStorage.getItem('iqUID');
-            myPlayerRef.update({
-                answer:      answerIndex,
-                answeredAt:  firebase.database.ServerValue.TIMESTAMP,
-                score:       score,
-                alive:       true
-            });
+            myPlayerRef.update({ alive: alive, score: score });
         }
 
         // ── SYNC ELIMINATION TO RTDB ──
         function syncEliminatedToRoom() {
-            if (!isMultiplayer || !myPlayerRef) return;
-            myPlayerRef.update({ alive: false, score: score });
+            syncStatusToRoom(false);
         }
 
         // ── CLEANUP ROOM ON EXIT ──
         function cleanupRoom() {
             if (roomListener && roomRef) { roomRef.off('value', roomListener); roomListener = null; }
             if (playersListener && playersRef) { playersRef.off('value', playersListener); playersListener = null; }
-            if (myPlayerRef) myPlayerRef.remove();
+            if (myPlayerRef) {
+                // Remove self from room
+                myPlayerRef.remove().then(function() {
+                    // If room is now empty and still waiting, delete it entirely
+                    if (roomRef) {
+                        roomRef.child('players').once('value').then(function(snap) {
+                            if (!snap.exists() || snap.numChildren() === 0) {
+                                roomRef.remove();
+                            }
+                        }).catch(function() {});
+                    }
+                }).catch(function() {});
+            }
             currentRoomId = null; roomRef = null; playersRef = null; myPlayerRef = null;
             isMultiplayer = false; isHost = false;
+        }
+
+        // ── CLEAN UP STALE ROOMS (called on lobby load) ──
+        function cleanupStaleRooms() {
+            var cutoff = Date.now() - (30 * 60 * 1000); // 30 minutes old
+            rtdb.ref('rooms').orderByChild('createdAt').endAt(cutoff).once('value')
+                .then(function(snap) {
+                    if (!snap.exists()) return;
+                    var updates = {};
+                    snap.forEach(function(child) {
+                        var room = child.val();
+                        // Only delete waiting rooms with no players, or very old ones
+                        var playerCount = room.players ? Object.keys(room.players).length : 0;
+                        if (playerCount === 0 || room.status === 'finished') {
+                            updates[child.key] = null;
+                        }
+                    });
+                    if (Object.keys(updates).length > 0) {
+                        rtdb.ref('rooms').update(updates);
+                    }
+                }).catch(function() {});
         }
 
         function cancelMatchmaking() {
@@ -1507,12 +1553,7 @@
         // ── CALL AFTER AUTH ──
         function onGameReady() {
             checkAutoJoin();
-        }
-
-        // ── SYNC SCORE EVERY CORRECT ANSWER ──
-        function syncScoreToRoom() {
-            if (!isMultiplayer || !myPlayerRef) return;
-            myPlayerRef.update({ score: score });
+            cleanupStaleRooms();
         }
 
         var audioCtx = null;
@@ -1665,7 +1706,7 @@
         var previousZone   = -1;
 
         // ── ZONE CONFIG ──
-        const zones = [
+        var zones = [
             { name: "🟢 SAFETY ZONE",  className: "zone-1", from: 0,  to: 2,  time: 15, color: "#4ade80" },
             { name: "🟡 DANGER ZONE",  className: "zone-2", from: 3,  to: 7,  time: 15, color: "#fb923c" },
             { name: "🔴 HARD ZONE",    className: "zone-3", from: 8,  to: 12, time: 12, color: "#f87171" },
@@ -1673,7 +1714,7 @@
             { name: "⚡ SUDDEN DEATH", className: "zone-3", from: 17, to: 999, time: 10, color: "#f87171" },
         ];
 
-        const zoneBannerData = [
+        var zoneBannerData = [
             null,
             { icon: "⚠️", title: "Danger Zone!", sub: "One wrong answer eliminates you", color: "#fb923c" },
             { icon: "🔴", title: "Hard Zone!",   sub: "Only the best survive here",       color: "#f87171" },
@@ -1682,7 +1723,7 @@
         ];
 
         // ── CATEGORY MAP ──
-        const categoryMap = {
+        var categoryMap = {
             '🇮🇳 Indian GK': 'Indian GK',
             '🌍 World GK': 'World GK',
             '🔬 Science': 'Science',
@@ -1958,7 +1999,7 @@
             }
 
             answered = true;
-            if (currentQ >= 3) eliminateBots();
+            if (currentQ >= 3 && !isMultiplayer) eliminateBots();
 
             setTimeout(() => {
                 if (!playerAnswered) {
@@ -1973,7 +2014,7 @@
                     lifelineActive = false;
                     totalTimeTaken += (Date.now() - questionStartTime) / 1000;
                     sounds.correct();
-                    syncScoreToRoom();
+                    syncStatusToRoom(true);
                     showStreakIfNeeded();
                     nextQuestion();
                 } else {
@@ -2050,6 +2091,10 @@
             clearInterval(timerInterval);
             sounds.eliminated();
             syncEliminatedToRoom();
+            // Mark room finished if I was last one (host responsibility)
+            if (isMultiplayer && isHost && roomRef) {
+                roomRef.update({ status: 'finished' });
+            }
             saveGameResult(false);
 
             document.getElementById('eliminated-msg').textContent = msg;
@@ -2089,6 +2134,7 @@
             clearInterval(timerInterval);
             sounds.win();
             if (isMultiplayer && myPlayerRef) myPlayerRef.update({ score: score, alive: true });
+            if (isMultiplayer && roomRef) roomRef.update({ status: 'finished' });
             saveGameResult(true);
 
             document.getElementById('win-score').textContent = score;
