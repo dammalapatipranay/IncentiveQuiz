@@ -613,6 +613,7 @@
             <a href="leaderboard.html">Leaderboard</a>
             <a href="profile.html" style="color:white;background-color:#1e1e3a">Profile</a>
             <a href="game.html" class="nav-play">⚡ Play</a>
+            <div id="nav-username" style="width:34px;height:34px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:white;cursor:pointer" onclick="window.location.href='profile.html'">?</div>
             <button onclick="logoutUser()" class="nav-logout-btn">Logout</button>
         </div>
     </nav>
@@ -834,6 +835,9 @@
 
                 // Profile header
                 document.getElementById('big-avatar').textContent = username[0].toUpperCase();
+                // Nav avatar
+                var navU = document.getElementById('nav-username');
+                if (navU) navU.textContent = username[0].toUpperCase();
 
                 // Rank badge
                 var games  = data.games  || 0;
@@ -965,7 +969,7 @@
                 </div>
             `).join('');
         }
-        let friendsPanelOpen = false;
+        var friendsPanelOpen = false;
 
         // ── EDIT USERNAME ──
         function openEditUsername() {
@@ -1082,13 +1086,30 @@
         function challengeFriendFromProfile(friendUID, friendName) {
             var uid = localStorage.getItem('iqUID');
             var username = localStorage.getItem('iqUsername') || 'Player';
+
+            // Let challenger pick a category
+            var categories = [
+                'Indian GK','World GK','Science','Maths',
+                'Current Affairs','History','Cricket',
+                'Sports','Bollywood','OTT and Web Series'
+            ];
+            var catList = categories.map(function(c, i) { return (i+1) + '. ' + c; }).join('\n');
+            var pick = prompt('⚔️ Challenge ' + friendName + '\n\nChoose a category:\n' + catList + '\n\nEnter number (1-10):');
+            if (!pick) return;
+            var idx = parseInt(pick) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= categories.length) {
+                alert('Invalid choice. Please enter a number between 1 and 10.');
+                return;
+            }
+            var chosenCategory = categories[idx];
+
             var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             var code = '';
             for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
             var roomId = 'PR_' + code;
 
             firebase.database().ref('rooms/' + roomId).set({
-                category:    'Indian GK',
+                category:    chosenCategory,
                 status:      'waiting',
                 hostUID:     uid,
                 playerCount: 1,
@@ -1096,18 +1117,19 @@
                 code:        code,
                 createdAt:   firebase.database.ServerValue.TIMESTAMP
             }).then(function() {
-                firebase.database().ref('rooms/' + roomId + '/players/' + uid).set({
+                return firebase.database().ref('rooms/' + roomId + '/players/' + uid).set({
                     username: username, alive: true, score: 0, answer: -1, answeredAt: 0
                 });
+            }).then(function() {
                 return db.collection('challenges').add({
                     from: uid, fromName: username,
                     to: friendUID, toName: friendName,
-                    roomCode: code, category: 'Indian GK',
+                    roomCode: code, category: chosenCategory,
                     status: 'pending',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }).then(function() {
-                alert('⚔️ Challenge sent to ' + friendName + '!\nThey will see it on their dashboard.\n\nYou will be taken to the game room now.');
+                alert('⚔️ Challenge sent to ' + friendName + '!\n📚 Category: ' + chosenCategory + '\n\nYou will be taken to the game room now.');
                 window.location.href = 'game.html?join=' + code;
             }).catch(function(e) { alert('Could not send challenge: ' + e.message); });
         }
