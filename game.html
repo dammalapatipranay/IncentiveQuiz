@@ -924,7 +924,32 @@
     </div>
 
     <script>
-        // ── SOUND ENGINE (Web Audio API — no external files needed) ──
+        // ── ALL GAME STATE — declared first so auth listener can safely call functions ──
+        var questions       = [
+            { question: "What is the capital of India?", options: ["Mumbai","Kolkata","New Delhi","Chennai"], answer: 2, difficulty: "easy" },
+            { question: "Which planet is the Red Planet?", options: ["Venus","Jupiter","Mars","Saturn"], answer: 2, difficulty: "medium" },
+            { question: "Who gave the theory of relativity?", options: ["Newton","Einstein","Hawking","Bohr"], answer: 1, difficulty: "hard" },
+        ];
+        var easyQuestions   = [];
+        var mediumQuestions = [];
+        var hardQuestions   = [];
+        var currentQ        = 0;
+        var score           = 0;
+        var correctStreak   = 0;
+        var playersAlive    = 10;
+        var timerInterval   = null;
+        var arcInterval     = null;
+        var timeLeft        = 15;
+        var maxTime         = 15;
+        var answered        = false;
+        var lifelineUsed    = false;
+        var lifelineActive  = false;
+        var selectedCategory = 'Indian GK';
+        var gameStartTime   = null;
+        var questionStartTime = null;
+        var totalTimeTaken  = 0;
+        var previousZone    = -1;
+
         // ── MULTIPLAYER STATE ──
         var currentRoomId   = null;
         var isHost          = false;
@@ -1662,49 +1687,23 @@
                     localStorage.setItem('iqUsername', data.username || 'Player');
                     localStorage.setItem('iqBest', data.best || 0);
                 }
+                showGame();
             }).catch(function(e) {
                 console.log('Error loading user:', e);
-            }).finally(function() {
+                showGame();
+            });
+
+            function showGame() {
                 var uname = localStorage.getItem('iqUsername') || 'Player';
                 document.getElementById('display-name').textContent = uname;
                 document.getElementById('avatar').textContent = uname[0].toUpperCase();
-
                 var loader = document.getElementById('auth-loading');
                 var content = document.getElementById('page-content');
                 if (loader) loader.style.display = 'none';
                 if (content) content.style.display = 'block';
                 onGameReady();
-            });
+            }
         });
-        // ── FALLBACK QUESTIONS ──
-        var questions = [
-            { question: "What is the capital of India?", options: ["Mumbai","Kolkata","New Delhi","Chennai"], answer: 2, difficulty: "easy" },
-            { question: "Which planet is the Red Planet?", options: ["Venus","Jupiter","Mars","Saturn"], answer: 2, difficulty: "medium" },
-            { question: "Who gave the theory of relativity?", options: ["Newton","Einstein","Hawking","Bohr"], answer: 1, difficulty: "hard" },
-        ];
-
-        var easyQuestions   = [];
-        var mediumQuestions = [];
-        var hardQuestions   = [];
-
-        // ── GAME STATE ──
-        var currentQ       = 0;
-        var score          = 0;
-        var correctStreak  = 0;
-        var playersAlive   = 10;
-        var timerInterval  = null;
-        var arcInterval    = null;
-        var timeLeft       = 15;
-        var maxTime        = 15;
-        var answered       = false;
-        var lifelineUsed   = false;
-        var lifelineActive = false;
-        var selectedCategory = 'Indian GK';
-        var gameStartTime  = null;
-        var questionStartTime = null;
-        var totalTimeTaken = 0;
-        var previousZone   = -1;
-
         // ── ZONE CONFIG ──
         var zones = [
             { name: "🟢 SAFETY ZONE",  className: "zone-1", from: 0,  to: 2,  time: 15, color: "#4ade80" },
